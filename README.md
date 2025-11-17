@@ -83,11 +83,17 @@ vagrant@ansible$ nano example_ansible/hosts/all
 And on the file `hosts/all` and the following lines:
 
 ```ini
-[alfa]
-192.168.0.2    
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3.12
 
-[bravo]
-192.168.0.3
+[database]
+192.168.11.20
+
+[loadbalancer]
+192.168.11.30
+
+[webserver]
+192.168.11.40
 ```
 
 * Check if everything works executing the following command:
