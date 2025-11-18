@@ -10,4 +10,3 @@
     - name: Desinstalar Paquete Nginx # Desinstalar el paquete Nginx usando apt
       apt:
         name: nginx # Nombre del paquete a desinstalar
-        state: absent # Asegurarse de que el paquete esté ausente

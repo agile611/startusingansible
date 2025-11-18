@@ -1,19 +1,22 @@
-tasks: # Definir las tareas a ejecutar
-  - name: Instalar Paquete Nginx # Instalar el paquete Nginx usando apt
-    apt:
-      name: nginx # Nombre del paquete a instalar
-      state: present # Asegurarse de que el paquete esté presente
-      update_cache: yes # Actualizar la caché de apt antes de la instalación
+- name: Instalar Nginx # Instalar y configurar Nginx en servidores Ubuntu
+  hosts: webserver # Atacar todos los hosts definidos en el inventario
+  become: yes # Escalar privilegios a root
+  tasks: # Definir las tareas a ejecutar
+    - name: Instalar Paquete Nginx # Instalar el paquete Nginx usando apt
+      apt:
+        name: nginx # Nombre del paquete a instalar
+        state: present # Asegurarse de que el paquete esté presente
+        update_cache: yes # Actualizar la caché de apt antes de la instalación
 
-  - name: Iniciar el servicio Nginx # Asegurarse de que el servicio Nginx esté iniciado y habilitado
-    service:
-      name: nginx # Nombre del servicio a gestionar
-      state: started # Iniciar el servicio
-      enabled: yes # Habilitar el servicio para que inicie al arrancar el sistema
+    - name: Iniciar el servicio Nginx # Asegurarse de que el servicio Nginx esté iniciado y habilitado
+      service:
+        name: nginx # Nombre del servicio a gestionar
+        state: started # Iniciar el servicio
+        enabled: yes # Habilitar el servicio para que inicie al arrancar el sistema
 
-  - name: Verificar el estado del servicio Nginx # Obtener y mostrar el estado del servicio Nginx
-    service_facts:
+    - name: Verificar el estado del servicio Nginx # Obtener y mostrar el estado del servicio Nginx
+      service_facts:
 
-  - name: Mostrar estado del servicio Nginx # Mostrar el estado actual del servicio Nginx
-    debug:
-      msg: "El servicio Nginx está {{ ansible_facts.services['nginx.service'].state }}"
+    - name: Mostrar estado del servicio Nginx # Mostrar el estado actual del servicio Nginx
+      debug:
+        msg: "El servicio Nginx está {{ ansible_facts.services['nginx.service'].state }}"
