@@ -1,0 +1,9 @@
+- name: ejecutar tareas con un usuario especifico
+  hosts: all
+  become: yes
+  become_user: postgres
+  tasks:
+    - name: Crear base de datos
+      postgresql_db:
+        name: mi_base_de_datos
+        state: present

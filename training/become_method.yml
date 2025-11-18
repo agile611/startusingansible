@@ -1,0 +1,12 @@
+- name: Usar su en lugar de sudo 
+  hosts: all
+  become: yes
+  become_method: su
+  tasks:
+    - name: Verificar el usuario actual
+      command: whoami
+      register: resultado
+
+    - name: Mostrar el usuario actual
+      debug:
+        msg: "El usuario actual es {{ resultado.stdout }}"
