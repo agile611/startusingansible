@@ -1,0 +1,11 @@
+[all:vars] # Definir el intérprete de Python para todos los hosts
+ansible_python_interpreter=/usr/bin/python3.12
+
+[database] # Definir el grupo de bases de datos
+db_01 ansible_host=192.168.11.20
+
+[loadbalancer] # Definir el grupo de balanceadores de carga
+lb_01 ansible_host=192.168.11.30
+
+[webserver] # Definir el grupo de servidores web
+ws_01 ansible_host=192.168.11.40
