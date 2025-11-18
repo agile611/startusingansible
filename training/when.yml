@@ -1,0 +1,21 @@
+- name: Instala Nginx cuando la maquina tenga la ip 192.168.11.40
+  hosts: all
+  become: yes
+  tasks:
+    - name: Obtener la dirección IP de la interfaz eth1
+      command: ip addr show eth1
+      register: ip_output
+
+    - name: Extraer la dirección IP de la salida del comando
+      set_fact:
+        ip_address: "{{ ip_output.stdout | regex_search('inet (\\d+\\.\\d+\\.\\d+\\.\\d+)', '\\1') }}"
+
+    - name: Imprimir la dirección IP obtenida
+      debug:
+        msg: "La dirección IP de eth1 es {{ ip_address }}"
+
+    - name: Instalar Nginx si la IP es 192.168.11.40
+      apt:
+        name: nginx
+        state: present
+      when: ip_address == ['192.168.11.40']
