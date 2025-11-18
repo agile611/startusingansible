@@ -8,8 +8,8 @@ Vagrant.configure(2) do |config|
       ansible.vm.network "forwarded_port", guest: 32000, host: 32000
       ansible.vm.provision :shell, :path => "ansible.sh" # Script de aprovisionamiento
       ansible.vm.provider "virtualbox" do |vb|
-        vb.memory = 4096 # Memoria RAM asignada
-        vb.cpus = 2     # Número de CPUs asignadas
+        vb.memory = 4096 # Memoria RAM asignada para tener AWX funcionando
+        vb.cpus = 2      # Número de CPUs asignadas
       end
     end
 
