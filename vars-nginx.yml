@@ -1,0 +1,26 @@
+- name: Ejemplo de variables en Ansible
+  hosts: webserver
+  vars:
+    servidor_nginx: "nginx"
+    puerto_nginx: 80
+    raiz_documentos: "/var/www/html"
+    mensaje_bienvenida: "¡Bienvenido a Nginx!"
+  tasks:
+    - name: Instalar Nginx
+      apt:
+        name: "{{ servidor_nginx }}"
+        state: present
+      become: yes
+    - name: Check service status
+      service:
+        name: "{{ servidor_nginx }}"
+        state: started
+        enabled: yes
+      become: yes
+    - name: Mostrar configuración de Nginx
+      debug:
+        msg: |
+          Servidor: {{ servidor_nginx }}
+          Puerto: {{ puerto_nginx }}
+          Raíz de documentos: {{ raiz_documentos }}
+          Mensaje de bienvenida: {{ mensaje_bienvenida }}
