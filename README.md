@@ -4,11 +4,9 @@
 
 This repository contains the code examples from the configuration management tools Ansible. It uses Vagrant to demonstrate these tools in practice.
 
-Here’s a summary of the README from the GitHub repository [agile611/startusingansible](https://github.com/agile611/startusingansible):
 
 ## Requirements
-
-- **Ansible**: Install Ansible on your host machine.
+- **git**: Necessary to clone the code.
 - **Vagrant**: This repository uses a Vagrant box based on Ubuntu, and APT will be used to install Ansible.
 - **Virtualbox**: It is the engine for virtualize the environment.
 
