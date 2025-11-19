@@ -1,0 +1,41 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for demo_app
+- name: install web components
+  apt: name={{item}} state=present update_cache=yes
+  with_items:
+    - python3-pip-whl
+    - python3-virtualenv
+    - python3-mysqldb
+
+- name: copy demo app source
+  copy: src=files/demo/app/ dest=/var/www/demo mode=0755
+  notify: restart apache2
+
+- name: change ownership of demo app
+  file: path=/var/www/demo owner=www-data group=www-data recurse=yes
+  notify: restart apache2
+
+- name: copy apache virtual host config
+  copy: src=files/demo/demo.conf dest=/etc/apache2/sites-available mode=0755
+  notify: restart apache2
+
+- name: create virtualenv
+  command: python3 -m venv /var/www/demo/.venv
+  args:
+    creates: /var/www/demo/.venv/bin/activate
+
+- name: source activate virtualenv
+  shell: source /var/www/demo/.venv/bin/activate
+  args:
+    executable: /bin/bash
+
+- name: pip install upgrade pip
+  shell: /var/www/demo/.venv/bin/pip install --upgrade pip
+
+- name: pip install requirements
+  shell: /var/www/demo/.venv/bin/pip install -r /var/www/demo/requirements.txt
+
+- name: activate demo apache site
+  file: src=/etc/apache2/sites-available/demo.conf dest=/etc/apache2/sites-enabled/demo.conf state=link
+  notify: restart apache2

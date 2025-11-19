@@ -1,0 +1,18 @@
+- name: Ejemplo de un bucle en Ansible
+  hosts: all
+  become: yes
+  tasks:
+    - name: Instalar el paquete 'curl'
+      apt:
+        name: curl
+        state: present
+
+    - name: Crear múltiples usuarios con contraseñas
+      user:
+        name: "{{ item }}"
+        password: "{{ 'password' | password_hash('sha512') }}"
+        state: present
+      loop:
+        - usuarioA
+        - usuarioB
+        - usuarioC

@@ -18,7 +18,6 @@ Vagrant.configure(2) do |config|
       database.vm.network "private_network", ip: "192.168.11.20"
       database.vm.hostname = "database"
       database.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
-      database.vm.provision :shell, :path => "ansible.sh"
       database.vm.network "forwarded_port", guest: 80, host: 8081 # Redirección del puerto 80
       database.vm.network "forwarded_port", guest: 3306, host: 3306 # Redirección del puerto MySQL
       database.vm.provider "virtualbox" do |vb|
@@ -33,7 +32,6 @@ Vagrant.configure(2) do |config|
       loadbalancer.vm.network "private_network", ip: "192.168.11.30"
       loadbalancer.vm.hostname = "loadbalancer"
       loadbalancer.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
-      loadbalancer.vm.provision :shell, :path => "ansible.sh"
       loadbalancer.vm.network "forwarded_port", guest: 80, host: 8080 # Redirección del puerto 80
       loadbalancer.vm.network "forwarded_port", guest: 3306, host: 33061 # Redirección del puerto MySQL alternativo
       loadbalancer.vm.provider "virtualbox" do |vb|
@@ -48,7 +46,6 @@ Vagrant.configure(2) do |config|
       webserver.vm.network "private_network", ip: "192.168.11.40"
       webserver.vm.hostname = "webserver"
       webserver.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
-      webserver.vm.provision :shell, :path => "ansible.sh"
       webserver.vm.network "forwarded_port", guest: 80, host: 80 # Redirección del puerto 80
       webserver.vm.network "forwarded_port", guest: 3306, host: 33062 # Redirección del puerto MySQL alternativo
       webserver.vm.provider "virtualbox" do |vb|

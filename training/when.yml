@@ -19,3 +19,14 @@
         name: nginx
         state: present
       when: ip_address == ['192.168.11.40']
+
+    - name: Verificar la instalación de Nginx
+      command: nginx -v
+      register: nginx_version
+      when: ip_address == ['192.168.11.40']
+    
+    - name: Desinstala nginx
+      apt:
+        name: nginx
+        state: absent
+      when: ip_address == ['192.168.11.40']

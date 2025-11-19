@@ -1,0 +1,16 @@
+---
+- hosts: database
+  become: true
+  roles:
+    - mysql
+
+- hosts: loadbalancer
+  become: true
+  roles:
+    - nginx
+
+- hosts: webserver
+  become: true
+  roles:
+    - apache2
+    - demo_app

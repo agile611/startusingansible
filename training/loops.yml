@@ -7,12 +7,12 @@
         name: python3-passlib
         state: present
     
-    - name: Crear múltiples usuarios con contraseñas
+    - name: lista multiples usuarios
       user:
-        name: "{{ item }}"
-        password: "{{ 'password' | password_hash('sha512') }}"
+        name: "{{ item.name }}"
+        password: "{{ item.password }}"
         state: present
       with_items:
-        - user1
-        - user2
-        - user3
+        - { name: usuario1, password: "contrasena1" }
+        - { name: usuario2, password: "contrasena2" }
+        - { name: usuario3, password: "contrasena3" }
