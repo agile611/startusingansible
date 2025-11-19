@@ -1,0 +1,20 @@
+database:
+  hosts:
+      db_server_1: 192.168.11.20
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_password: vagrant
+
+loadbalancer:
+  hosts:
+      lb_server_1: 192.168.11.30
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_password: vagrant
+
+webserver:
+  hosts:
+      ws_server_1: 192.168.11.40
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_password: vagrant
