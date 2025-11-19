@@ -1,3 +1,6 @@
+all:
+  ansible_python_interpreter: /usr/bin/python3.12
+  
 database:
   hosts:
       db_server_1: 192.168.11.20
