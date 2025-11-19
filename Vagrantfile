@@ -6,6 +6,9 @@ Vagrant.configure(2) do |config|
       ansible.vm.hostname = "ansible" # Nombre de host
       ansible.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync" # Carpeta sincronizada
       ansible.vm.network "forwarded_port", guest: 32000, host: 32000
+      # No es necesario provisionar Ansible aquí, ya que si AWX está instalado, ya incluye Ansible
+      # Está incluido un script de aprovisionamiento básicamente para tener solo un Vagrantfile
+      # para todo el entorno Ansible y que instale dependencias adicionales si se requieren.
       ansible.vm.provision :shell, :path => "ansible.sh" # Script de aprovisionamiento
       ansible.vm.provider "virtualbox" do |vb|
         vb.memory = 4096 # Memoria RAM asignada para tener AWX funcionando
