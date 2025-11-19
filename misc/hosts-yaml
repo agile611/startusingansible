@@ -17,7 +17,7 @@ loadbalancer:
       ansible_ssh_password: vagrant
 webserver:
   hosts:
-    db_01:
+    ws_01:
       ansible_host: 192.168.11.40
       ansible_connection: ssh
       ansible_user: vagrant
