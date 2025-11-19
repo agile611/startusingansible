@@ -1,0 +1,24 @@
+all:
+  ansible_python_interpreter: /usr/bin/python3.12
+
+database:
+  hosts:
+    db_01:
+      ansible_host: 192.168.11.20
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_password: vagrant
+loadbalancer:
+  hosts:
+    lb_01:
+      ansible_host: 192.168.11.30
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_password: vagrant
+webserver:
+  hosts:
+    db_01:
+      ansible_host: 192.168.11.40
+      ansible_connection: ssh
+      ansible_user: vagrant
+      ansible_ssh_password: vagrant
