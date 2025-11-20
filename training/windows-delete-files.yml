@@ -1,0 +1,13 @@
+---
+- name: Prueba de conexión a Windows
+  hosts: windows
+  tasks:
+    - name: Borrar fichero escritorioSegundo en Windows
+      ansible.windows.win_file:
+      path: C:\Users\AnsibleNode\Desktop\escritorioSegundo.txt
+      state: absent
+
+    - name: Borrar fichero escritorio en Windows
+      ansible.windows.win_file:
+      src: C:\Users\AnsibleNode\Desktop\escritorio.txt 
+      state: absent
