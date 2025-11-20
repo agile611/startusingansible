@@ -11,10 +11,10 @@
     - name: Copy a single file
       ansible.windows.win_copy:
         src: prueba.txt
-        dest: C:\Users\vboxuser\Desktop\escritorio.txt
+        dest: C:\Users\AnsibleNode\Desktop\escritorio.txt
 
     - name: Copy a single file where the source is on the remote host
       ansible.windows.win_copy:
-        src: C:\Users\vboxuser\Desktop\escritorio.txt
-        dest: C:\Users\vboxuser\Desktop\escritorioSegundo.txt
+        src: C:\Users\AnsibleNode\Desktop\escritorio.txt
+        dest: C:\Users\AnsibleNode\Desktop\escritorioSegundo.txt
         remote_src: true
