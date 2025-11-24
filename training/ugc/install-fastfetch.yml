@@ -1,0 +1,53 @@
+---
+- name: Instalar fastfetch en las VMs del curso
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+
+    - name: Actualizar la caché de paquetes
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Instalar dependencias necesarias
+      apt:
+        name:
+          - git
+          - cmake
+          - build-essential
+          - pkg-config
+          - libgl1-mesa-dev
+          - libwayland-dev
+          - libx11-dev
+        state: present
+
+    - name: Clonar repositorio oficial de fastfetch
+      git:
+        repo: "https://github.com/fastfetch-cli/fastfetch.git"
+        dest: "/tmp/fastfetch"
+        version: master
+        force: yes
+
+    - name: Crear directorio build
+      file:
+        path: "/tmp/fastfetch/build"
+        state: directory
+
+    - name: Ejecutar cmake
+      command: cmake .. chdir=/tmp/fastfetch/build
+
+    - name: Compilar
+      command: make -j"{{ ansible_processor_vcpus | default(2) }}" chdir=/tmp/fastfetch/build
+
+    - name: Instalar
+      command: make install chdir=/tmp/fastfetch/build
+
+    - name: Verificar instalación
+      command: fastfetch --version
+      register: ff_version
+
+    - name: Mostrar versión instalada
+      debug:
+        var: ff_version.stdout
