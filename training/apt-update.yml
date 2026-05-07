@@ -1,0 +1,17 @@
+- name: Actualitzar el sistema
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Actualitzar caché apt
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Actualitzar tots els paquets
+      ansible.builtin.apt:
+        upgrade: yes
+
+    - name: Eliminar paquets orfes
+      ansible.builtin.apt:
+        autoremove: yes
