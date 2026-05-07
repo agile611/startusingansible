@@ -1,0 +1,7 @@
+- name: Dpkg configure
+  hosts: all
+  become: yes
+  tasks:
+
+    - name: Dpkg configure
+      command: dpkg --configure -a
