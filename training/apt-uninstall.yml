@@ -1,0 +1,13 @@
+- name: Desinstal·lar paquets amb apt
+  hosts: webserver
+  become: yes
+  tasks:
+
+    - name: Eliminar curl i vim
+      ansible.builtin.apt:
+        name:
+          - curl
+          - vim
+        state: absent
+        purge: yes
+        autoremove: yes
