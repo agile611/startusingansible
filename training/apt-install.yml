@@ -1,0 +1,15 @@
+- name: Instal·lar paquets amb apt
+  hosts: webserver
+  become: yes
+  tasks:
+
+    - name: Instal·lar curl
+      ansible.builtin.apt:
+        name: curl
+        state: present
+        update_cache: yes
+
+    - name: Instal·lar vim
+      ansible.builtin.apt:
+        name: vim
+        state: present
