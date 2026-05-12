@@ -1,6 +1,10 @@
 ---
   - hosts: all
+    gather_facts: true
     tasks:
+      - name: mostrar tots el gather facts
+        debug:
+          var: ansible_facts
       - name: get server hostname
         command: hostname
       - name: mostrar IP del host
