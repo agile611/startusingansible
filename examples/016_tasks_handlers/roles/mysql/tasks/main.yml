@@ -5,9 +5,9 @@
     - python3-mysqldb
 
 - name: install mysql-server
-  apt: name=mysql-server state=present update_cache=yes
+  apt: name=mysql-server-8.0 state=present update_cache=yes
 
-- name: ensuer mysql started properly
+- name: ensure mysql started properly
   service: name=mysql state=started enabled=yes
   register: mysql_status
   until: mysql_status is success
