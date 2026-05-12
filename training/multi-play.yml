@@ -1,0 +1,17 @@
+- name: Configurar base de dades    # Play 1
+  hosts: database
+  become: yes
+  tasks:
+    - name: Instal·lar PostgreSQL
+      apt:
+        name: postgresql
+        state: present
+
+- name: Configurar servidor web     # Play 2
+  hosts: webserver
+  become: yes
+  tasks:
+    - name: Instal·lar Nginx
+      apt:
+        name: nginx
+        state: present
