@@ -3,3 +3,9 @@
     tasks:
       - name: get server hostname
         command: hostname
+      - name: mostrar IP del host
+        debug:
+          msg: "IP: {{ ansible_default_ipv4.address }}"
+      - name: mostrar hostname
+        debug:
+          msg: "Host: {{ ansible_hostname }}"
