@@ -6,4 +6,3 @@
 - import_playbook: control.yml
 - import_playbook: playbooks/stack_restart.yml
 - import_playbook: playbooks/stack_status.yml
-  
