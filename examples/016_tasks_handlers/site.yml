@@ -4,7 +4,6 @@
 - import_playbook: webserver.yml
 - import_playbook: loadbalancer.yml
 - import_playbook: control.yml
-- import_playbook: playbooks/stack_status.yml
 - import_playbook: playbooks/stack_restart.yml
 - import_playbook: playbooks/stack_status.yml
   
