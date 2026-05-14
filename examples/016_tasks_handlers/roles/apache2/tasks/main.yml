@@ -29,7 +29,7 @@
   command: python3 -m venv /var/www/demo/.venv creates=/var/www/demo/.venv
 
 - name: source virtualenv
-  shell: source /var/www/demo/.venv/bin/activate
+  shell: /bin/bash /var/www/demo/.venv/bin/activate
   args:
     executable: /bin/bash
 
