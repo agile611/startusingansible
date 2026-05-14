@@ -28,10 +28,13 @@
 
 - hosts: control
   tasks:
-    - name: verify end-to-end index response
+    - name: get elements from loadbalancer group
+      debug: var=groups.loadbalancer
+    
+    - name: verify end-to-end connectivity to loadbalancer
       uri: url=http://{{item}} return_content=yes
       loop: groups.loadbalancer
-      register: lb_index
+      register: lb_connectivity
 
     - fail: msg="index failed to return content"
       when: "'Hello, from sunny' not in item.content"
