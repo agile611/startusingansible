@@ -28,6 +28,10 @@
 - name: initialize virtualenv
   shell: python3 -m venv /var/www/demo/.venv creates=/var/www/demo/.venv
 
+- name: source virtualenv and install app dependencies
+  shell: . /var/www/demo/.venv/bin/activate && pip install -r /var/www/demo/requirements.txt
+  notify: restart apache2
+
 - name: setup python virtualenv
   pip: requirements=/var/www/demo/requirements.txt virtualenv=/var/www/demo/.venv
   notify: restart apache2
