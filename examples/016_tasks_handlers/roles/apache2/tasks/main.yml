@@ -26,7 +26,7 @@
   notify: restart apache2
 
 - name: initialize virtualenv
-  shell: python3 -m venv /var/www/demo/.venv
+  shell: python3 -m venv /var/www/demo/.venv creates=/var/www/demo/.venv
 
 - name: setup python virtualenv
   pip: requirements=/var/www/demo/requirements.txt virtualenv=/var/www/demo/.venv
