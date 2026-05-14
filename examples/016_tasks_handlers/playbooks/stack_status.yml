@@ -38,11 +38,11 @@
 
     - fail: msg="index failed to return content"
       when: "'Hello, from sunny' not in item.content"
-      loop: "{{lb_index.results}}"
+      loop: "{{lb_connectivity.results}}"
 
     - name: verify end-to-end db response
       uri: url=http://{{item}}/db return_content=yes
-      loop: groups.loadbalancer
+      loop: "{{ groups.loadbalancer }}"
       register: lb_db
 
     - fail: msg="db failed to return content"
@@ -53,7 +53,7 @@
   tasks:
     - name: verify backend index response
       uri: url=http://{{item}} return_content=yes
-      loop: groups.webserver
+      loop: "{{ groups.webserver }}"
       register: app_index
 
     - fail: msg="index failed to return content"
@@ -62,7 +62,7 @@
 
     - name: verify backend db response
       uri: url=http://{{item}}/db return_content=yes
-      loop: groups.webserver
+      loop: "{{ groups.webserver }}"
       register: app_db
 
     - fail: msg="db failed to return content"
