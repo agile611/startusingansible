@@ -33,7 +33,7 @@
     
     - name: verify end-to-end connectivity to loadbalancer
       uri: url=http://{{item}} return_content=yes
-      loop: groups.loadbalancer
+      loop: "{{ groups.loadbalancer }}"
       register: lb_connectivity
 
     - fail: msg="index failed to return content"
