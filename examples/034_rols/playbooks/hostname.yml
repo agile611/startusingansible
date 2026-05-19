@@ -1,0 +1,11 @@
+---
+  - hosts: all
+    tasks:
+      - name: Ping to servers
+        ping:
+      - name: Get hostname
+        command: hostname
+        register: hostname
+      - name: Show hostname with message
+        debug:
+          msg: "The hostname of this server is {{ hostname.stdout }}"
