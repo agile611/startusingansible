@@ -1,6 +1,6 @@
 ---
-- include: control.yml
-- include: database.yml
-- include: webserver.yml
-- include: loadbalancer.yml
-- include: playbooks/stack_status.yml
+- import_playbook: control.yml
+- import_playbook: database.yml
+- import_playbook: webserver.yml
+- import_playbook: loadbalancer.yml
+- import_playbook: playbooks/stack_status.yml
