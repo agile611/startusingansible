@@ -1,4 +1,8 @@
 ---
   - hosts: all
     tasks:
-      - command: hostname
+      - name: get server hostname
+        command: hostname
+      - name: Debug hostname
+        ansible.builtin.debug:
+          var: ansible_facts['hostname']
