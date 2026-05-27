@@ -1,9 +1,0 @@
----
-# tasks file for common
-- name: install epel repo
-  apt: 
-    name: epel-release 
-    state: present
-    
-- include: selinux.yml
-- include: ntp.yml
