@@ -1,0 +1,44 @@
+services:
+  ansible:
+    build: .
+    container_name: ansible
+    hostname: ansible
+    networks:
+      ansible-net:
+        ipv4_address: 192.168.11.10
+    volumes:
+      - ./ssh:/home/vagrant/.ssh/host_keys
+      - .:/home/vagrant/workspace
+    stdin_open: true
+    tty: true
+
+  database:
+    build: .
+    container_name: database
+    hostname: database
+    networks:
+      ansible-net:
+        ipv4_address: 192.168.11.20
+
+  loadbalancer:
+    build: .
+    container_name: loadbalancer
+    hostname: loadbalancer
+    networks:
+      ansible-net:
+        ipv4_address: 192.168.11.30
+
+  webserver:
+    build: .
+    container_name: webserver
+    hostname: webserver
+    networks:
+      ansible-net:
+        ipv4_address: 192.168.11.40
+
+networks:
+  ansible-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.11.0/24
