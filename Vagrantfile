@@ -17,6 +17,8 @@ Vagrant.configure("2") do |config|
       v.memory        = 512
       v.cpus          = 1
       v.graphics_type = "spice"
+      v.cpu_mode      = "custom"
+      v.cpu_model     = "qemu64"
     end
   end
 
@@ -32,6 +34,8 @@ Vagrant.configure("2") do |config|
       v.memory        = 512
       v.cpus          = 1
       v.graphics_type = "spice"
+      v.cpu_mode      = "custom"
+      v.cpu_model     = "qemu64"
     end
   end
 
@@ -47,6 +51,8 @@ Vagrant.configure("2") do |config|
       v.memory        = 512
       v.cpus          = 1
       v.graphics_type = "spice"
+      v.cpu_mode      = "custom"
+      v.cpu_model     = "qemu64"
     end
   end
 
@@ -62,6 +68,8 @@ Vagrant.configure("2") do |config|
       v.memory        = 512
       v.cpus          = 1
       v.graphics_type = "spice"
+      v.cpu_mode      = "custom"
+      v.cpu_model     = "qemu64"
     end
   end
 
