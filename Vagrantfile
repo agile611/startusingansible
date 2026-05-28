@@ -13,8 +13,9 @@ Vagrant.configure("2") do |config|
     ansible.vm.synced_folder ".", "/vagrant", type: "rsync"
 
     ansible.vm.provider :libvirt do |v|
-      v.memory = 512
-      v.cpus   = 1
+      v.driver        = "qemu"
+      v.memory        = 512
+      v.cpus          = 1
       v.graphics_type = "spice"
     end
   end
@@ -27,8 +28,9 @@ Vagrant.configure("2") do |config|
     database.vm.synced_folder ".", "/vagrant", type: "rsync"
 
     database.vm.provider :libvirt do |v|
-      v.memory = 512
-      v.cpus   = 1
+      v.driver        = "qemu"
+      v.memory        = 512
+      v.cpus          = 1
       v.graphics_type = "spice"
     end
   end
@@ -41,8 +43,9 @@ Vagrant.configure("2") do |config|
     loadbalancer.vm.synced_folder ".", "/vagrant", type: "rsync"
 
     loadbalancer.vm.provider :libvirt do |v|
-      v.memory = 512
-      v.cpus   = 1
+      v.driver        = "qemu"
+      v.memory        = 512
+      v.cpus          = 1
       v.graphics_type = "spice"
     end
   end
@@ -55,8 +58,9 @@ Vagrant.configure("2") do |config|
     webserver.vm.synced_folder ".", "/vagrant", type: "rsync"
 
     webserver.vm.provider :libvirt do |v|
-      v.memory = 512
-      v.cpus   = 1
+      v.driver        = "qemu"
+      v.memory        = 512
+      v.cpus          = 1
       v.graphics_type = "spice"
     end
   end
