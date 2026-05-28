@@ -1,6 +1,5 @@
 Vagrant.configure(2) do |config|
 
-  # Forçar la xarxa de gestió correcta
   config.vm.provider "libvirt" do |lv|
     lv.management_network_name = "vagrant-libvirt"
     lv.management_network_address = "192.168.121.0/24"
@@ -18,7 +17,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
-      vb.nic_model_type = "e1000"
+      vb.nic_model_type = "virtio"
     end
     ansible.vm.provision :shell, :path => "ansible.sh"
   end
@@ -37,7 +36,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
-      vb.nic_model_type = "e1000"
+      vb.nic_model_type = "virtio"
     end
   end
 
@@ -55,7 +54,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
-      vb.nic_model_type = "e1000"
+      vb.nic_model_type = "virtio"
     end
   end
 
@@ -73,7 +72,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
-      vb.nic_model_type = "e1000"
+      vb.nic_model_type = "virtio"
     end
   end
 
