@@ -1,6 +1,5 @@
 Vagrant.configure(2) do |config|
 
-  # Màquina de control per a l'agent Ansible
   config.vm.define "ansible" do |ansible|
     ansible.vm.box = "generic/debian12"
     ansible.vm.network "private_network", ip: "192.168.56.10"
@@ -11,11 +10,12 @@ Vagrant.configure(2) do |config|
       vb.cpus = 1
       vb.driver = "qemu"
       vb.machine_type = "pc"
+      vb.graphics_type = "none"
+      vb.video_type = "none"
     end
     ansible.vm.provision :shell, :path => "ansible.sh"
   end
 
-  # Màquina per a la base de dades
   config.vm.define "database" do |database|
     database.vm.box = "generic/debian12"
     database.vm.network "private_network", ip: "192.168.56.20"
@@ -28,10 +28,11 @@ Vagrant.configure(2) do |config|
       vb.cpus = 1
       vb.driver = "qemu"
       vb.machine_type = "pc"
+      vb.graphics_type = "none"
+      vb.video_type = "none"
     end
   end
 
-  # Màquina per al balancejador de càrrega
   config.vm.define "loadbalancer" do |loadbalancer|
     loadbalancer.vm.box = "generic/debian12"
     loadbalancer.vm.network "private_network", ip: "192.168.56.30"
@@ -44,10 +45,11 @@ Vagrant.configure(2) do |config|
       vb.cpus = 1
       vb.driver = "qemu"
       vb.machine_type = "pc"
+      vb.graphics_type = "none"
+      vb.video_type = "none"
     end
   end
 
-  # Màquina per al servidor web
   config.vm.define "webserver" do |webserver|
     webserver.vm.box = "generic/debian12"
     webserver.vm.network "private_network", ip: "192.168.56.40"
@@ -60,6 +62,8 @@ Vagrant.configure(2) do |config|
       vb.cpus = 1
       vb.driver = "qemu"
       vb.machine_type = "pc"
+      vb.graphics_type = "none"
+      vb.video_type = "none"
     end
   end
 
