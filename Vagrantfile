@@ -1,7 +1,7 @@
 Vagrant.configure(2) do |config|
   # Màquina de control per a l'agent Ansible
   config.vm.define "ansible" do |ansible|
-    ansible.vm.box = "bento/debian-13.1"
+    ansible.vm.box = "generic/debian12"
     ansible.vm.network "private_network", ip: "192.168.56.10"
     ansible.vm.hostname = "ansible"
     ansible.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
 
   # Màquina per a la base de dades
   config.vm.define "database" do |database|
-    database.vm.box = "bento/debian-13.1"
+    database.vm.box = "generic/debian12"
     database.vm.network "private_network", ip: "192.168.56.20"
     database.vm.hostname = "database"
     database.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
@@ -28,7 +28,7 @@ Vagrant.configure(2) do |config|
 
   # Màquina per al balancejador de càrrega
   config.vm.define "loadbalancer" do |loadbalancer|
-    loadbalancer.vm.box = "bento/debian-13.1"
+    loadbalancer.vm.box = "generic/debian12"
     loadbalancer.vm.network "private_network", ip: "192.168.56.30"
     loadbalancer.vm.hostname = "loadbalancer"
     loadbalancer.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
@@ -42,7 +42,7 @@ Vagrant.configure(2) do |config|
 
   # Màquina per al servidor web
   config.vm.define "webserver" do |webserver|
-    webserver.vm.box = "bento/debian-13.1"
+    webserver.vm.box = "generic/debian12"
     webserver.vm.network "private_network", ip: "192.168.56.40"
     webserver.vm.hostname = "webserver"
     webserver.vm.synced_folder ".", "/home/vagrant/sync", type: "rsync"
