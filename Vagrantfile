@@ -1,5 +1,11 @@
 Vagrant.configure(2) do |config|
 
+  # Forçar la xarxa de gestió correcta
+  config.vm.provider "libvirt" do |lv|
+    lv.management_network_name = "vagrant-libvirt"
+    lv.management_network_address = "192.168.121.0/24"
+  end
+
   config.vm.define "ansible" do |ansible|
     ansible.vm.box = "generic/debian12"
     ansible.vm.network "private_network", ip: "192.168.56.10"
