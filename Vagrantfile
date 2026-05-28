@@ -12,6 +12,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
+      vb.nic_model_type = "e1000"
     end
     ansible.vm.provision :shell, :path => "ansible.sh"
   end
@@ -30,6 +31,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
+      vb.nic_model_type = "e1000"
     end
   end
 
@@ -47,6 +49,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
+      vb.nic_model_type = "e1000"
     end
   end
 
@@ -64,6 +67,7 @@ Vagrant.configure(2) do |config|
       vb.machine_type = "pc"
       vb.graphics_type = "none"
       vb.video_type = "none"
+      vb.nic_model_type = "e1000"
     end
   end
 
