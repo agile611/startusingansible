@@ -1,4 +1,5 @@
 Vagrant.configure(2) do |config|
+
   # Màquina de control per a l'agent Ansible
   config.vm.define "ansible" do |ansible|
     ansible.vm.box = "generic/debian12"
@@ -8,6 +9,8 @@ Vagrant.configure(2) do |config|
     ansible.vm.provider "libvirt" do |vb|
       vb.memory = 512
       vb.cpus = 1
+      vb.driver = "qemu"
+      vb.machine_type = "pc"
     end
     ansible.vm.provision :shell, :path => "ansible.sh"
   end
@@ -23,6 +26,8 @@ Vagrant.configure(2) do |config|
     database.vm.provider "libvirt" do |vb|
       vb.memory = 512
       vb.cpus = 1
+      vb.driver = "qemu"
+      vb.machine_type = "pc"
     end
   end
 
@@ -37,6 +42,8 @@ Vagrant.configure(2) do |config|
     loadbalancer.vm.provider "libvirt" do |vb|
       vb.memory = 512
       vb.cpus = 1
+      vb.driver = "qemu"
+      vb.machine_type = "pc"
     end
   end
 
@@ -51,6 +58,9 @@ Vagrant.configure(2) do |config|
     webserver.vm.provider "libvirt" do |vb|
       vb.memory = 512
       vb.cpus = 1
+      vb.driver = "qemu"
+      vb.machine_type = "pc"
     end
   end
+
 end
