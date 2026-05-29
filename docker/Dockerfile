@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     nano \
     git \
     ansible \
+    dnsutils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -35,6 +36,10 @@ RUN ssh-keygen -t rsa -b 4096 -f /home/vagrant/.ssh/id_rsa -N "" && \
 RUN sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
     sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config && \
     sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# DNS per a resolució externa (GitHub, etc.)
+RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf && \
+    echo "nameserver 8.8.4.4" >> /etc/resolv.conf
 
 EXPOSE 22
 
