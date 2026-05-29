@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     curl \
     vim \
+    nano \
     ansible \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
@@ -23,9 +24,10 @@ RUN mkdir -p /var/run/sshd && \
     mkdir -p /home/vagrant/.ssh && \
     chmod 700 /home/vagrant/.ssh
 
-# Copia la clau pública
-COPY ssh/id_rsa.pub /home/vagrant/.ssh/authorized_keys
-RUN chmod 600 /home/vagrant/.ssh/authorized_keys && \
+# Genera la clau SSH per a l'usuari vagrant
+RUN ssh-keygen -t rsa -b 4096 -f /home/vagrant/.ssh/id_rsa -N "" && \
+    cp /home/vagrant/.ssh/id_rsa.pub /home/vagrant/.ssh/authorized_keys && \
+    chmod 600 /home/vagrant/.ssh/authorized_keys /home/vagrant/.ssh/id_rsa && \
     chown -R vagrant:vagrant /home/vagrant/.ssh
 
 # Permet login SSH amb clau
