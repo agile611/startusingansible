@@ -21,7 +21,7 @@ y [wordpress-ansible](https://git.agile611.com/Agile611/wordpress-ansible).
 ┌─────────────────────────────────────────────────┐
 │              red: 192.168.11.0/24               │
 │                                                 │
-│  ansible       192.168.11.10  (nodo control)   │
+│  ansible       192.168.11.10  (nodo control)    │
 │  database      192.168.11.20  (MySQL/MariaDB)   │
 │  loadbalancer  192.168.11.30  (Nginx LB)        │
 │  webserver     192.168.11.40  (Apache/WordPress)│
