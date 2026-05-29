@@ -14,6 +14,8 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
+    cap_add:
+      - NET_ADMIN
 
   database:
     build: .
@@ -25,6 +27,8 @@ services:
     ports:
       - "8081:80"
       - "3306:3306"
+    cap_add:
+      - NET_ADMIN
 
   loadbalancer:
     build: .
@@ -36,6 +40,8 @@ services:
     ports:
       - "8080:80"
       - "33061:3306"
+    cap_add:
+      - NET_ADMIN
 
   webserver:
     build: .
@@ -47,6 +53,8 @@ services:
     ports:
       - "80:80"
       - "33062:3306"
+    cap_add:
+      - NET_ADMIN
 
 networks:
   ansible-net:

@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     git \
     ansible \
     dnsutils \
+    iproute2 \
+    iputils-ping \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
