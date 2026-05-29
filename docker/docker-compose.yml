@@ -11,6 +11,9 @@ services:
       - .:/home/vagrant/workspace
     stdin_open: true
     tty: true
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
 
   database:
     build: .
@@ -19,6 +22,9 @@ services:
     networks:
       ansible-net:
         ipv4_address: 192.168.11.20
+    ports:
+      - "8081:80"
+      - "3306:3306"
 
   loadbalancer:
     build: .
@@ -27,6 +33,9 @@ services:
     networks:
       ansible-net:
         ipv4_address: 192.168.11.30
+    ports:
+      - "8080:80"
+      - "33061:3306"
 
   webserver:
     build: .
@@ -35,6 +44,9 @@ services:
     networks:
       ansible-net:
         ipv4_address: 192.168.11.40
+    ports:
+      - "80:80"
+      - "33062:3306"
 
 networks:
   ansible-net:
@@ -42,3 +54,4 @@ networks:
     ipam:
       config:
         - subnet: 192.168.11.0/24
+          gateway: 192.168.11.1
