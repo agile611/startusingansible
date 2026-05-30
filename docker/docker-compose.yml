@@ -9,6 +9,7 @@ services:
     volumes:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
+      - /home/vagrant/sync:/home/vagrant/sync 
     stdin_open: true
     tty: true
     dns:
