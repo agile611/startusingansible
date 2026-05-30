@@ -8,15 +8,15 @@ Este repositorio contiene los ejemplos de código de las herramientas de gestió
 
 ## Requisitos
 
-### Opción A — Vagrant + VirtualBox
-- **git**: Necesario para clonar el código.
-- **Vagrant**: Este repositorio usa una box de Vagrant basada en Debian, y se usará APT para instalar Ansible.
-- **VirtualBox**: Es el motor para virtualizar el entorno.
-
-### Opción B — Docker
+### Opción A — Docker
 - **git**: Necesario para clonar el código.
 - **Docker** >= 24.x
 - **Docker Compose** >= 2.x
+
+### Opción B — Vagrant + VirtualBox
+- **git**: Necesario para clonar el código.
+- **Vagrant**: Este repositorio usa una box de Vagrant basada en Debian, y se usará APT para instalar Ansible.
+- **VirtualBox**: Es el motor para virtualizar el entorno.
 
 ---
 
@@ -27,55 +27,9 @@ Clona el repositorio:
 ```bash
 git clone https://www.github.com/agile611/startusingansible.git
 ```
-
 ---
 
-## Opción A — Configuración con Vagrant
-
-### Configuración inicial
-
-Inicia el entorno, que requiere cuatro boxes (Ansible, Loadbalancer, Database, Webserver):
-
-```bash
-vagrant up
-vagrant ssh ansible
-```
-
-Crea una clave SSH para conectarte a las VMs sin contraseña:
-
-```bash
-ssh-keygen
-cat /home/vagrant/.ssh/id_rsa.pub
-```
-
-Copia la clave pública a las VMs y configura las authorized keys:
-
-```bash
-vagrant@ansible$ ssh-copy-id vagrant@192.168.11.20
-vagrant@ansible$ ssh-copy-id vagrant@192.168.11.30
-vagrant@ansible$ ssh-copy-id vagrant@192.168.11.40
-```
-
-Verifica la conexión SSH:
-
-```bash
-ssh vagrant@192.168.11.20
-```
-
-Si se solicita contraseña, el usuario es `vagrant` y la contraseña es `vagrant`.
-
-### Nota importante
-
-El orden de prioridad del fichero de configuración es el siguiente:
-
-1. **ANSIBLE_CONFIG** (variable de entorno)
-2. **ansible.cfg** (carpeta actual)
-3. **~/.ansible.cfg** (home del usuario)
-4. **/etc/ansible/ansible.cfg** (fichero general)
-
----
-
-## Opción B — Configuración con Docker
+## Opción A — Configuración con Docker
 
 ### Arquitectura
 
@@ -238,6 +192,51 @@ ansible-playbook -i hosts/all request.yml
 ### Ejemplos adicionales
 
 Hay varios ejemplos disponibles en la carpeta `examples/`, que cubren diferentes aspectos del uso de Ansible.
+
+---
+
+## Opción B — Configuración con Vagrant
+
+### Configuración inicial
+
+Inicia el entorno, que requiere cuatro boxes (Ansible, Loadbalancer, Database, Webserver):
+
+```bash
+vagrant up
+vagrant ssh ansible
+```
+
+Crea una clave SSH para conectarte a las VMs sin contraseña:
+
+```bash
+ssh-keygen
+cat /home/vagrant/.ssh/id_rsa.pub
+```
+
+Copia la clave pública a las VMs y configura las authorized keys:
+
+```bash
+vagrant@ansible$ ssh-copy-id vagrant@192.168.11.20
+vagrant@ansible$ ssh-copy-id vagrant@192.168.11.30
+vagrant@ansible$ ssh-copy-id vagrant@192.168.11.40
+```
+
+Verifica la conexión SSH:
+
+```bash
+ssh vagrant@192.168.11.20
+```
+
+Si se solicita contraseña, el usuario es `vagrant` y la contraseña es `vagrant`.
+
+### Nota importante
+
+El orden de prioridad del fichero de configuración es el siguiente:
+
+1. **ANSIBLE_CONFIG** (variable de entorno)
+2. **ansible.cfg** (carpeta actual)
+3. **~/.ansible.cfg** (home del usuario)
+4. **/etc/ansible/ansible.cfg** (fichero general)
 
 ---
 
