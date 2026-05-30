@@ -2,38 +2,53 @@
 
 # Agile611 Ansible Training
 
-This repository contains the code examples from the configuration management tools Ansible. It uses Vagrant to demonstrate these tools in practice.
+Este repositorio contiene los ejemplos de código de las herramientas de gestión de configuración Ansible. Utiliza Vagrant o Docker para demostrar estas herramientas en la práctica.
 
+---
 
-## Requirements
-- **git**: Necessary to clone the code.
-- **Vagrant**: This repository uses a Vagrant box based on Ubuntu, and APT will be used to install Ansible.
-- **Virtualbox**: It is the engine for virtualize the environment.
+## Requisitos
 
-## Example Code
+### Opción A — Vagrant + VirtualBox
+- **git**: Necesario para clonar el código.
+- **Vagrant**: Este repositorio usa una box de Vagrant basada en Debian, y se usará APT para instalar Ansible.
+- **VirtualBox**: Es el motor para virtualizar el entorno.
 
-Clone the repository:
+### Opción B — Docker
+- **git**: Necesario para clonar el código.
+- **Docker** >= 24.x
+- **Docker Compose** >= 2.x
+
+---
+
+## Código de ejemplo
+
+Clona el repositorio:
 
 ```bash
 git clone https://www.github.com/agile611/startusingansible.git
 ```
 
-### Initial Configuration
+---
 
-Start the environment, requiring four Ubuntu boxes (Ansible, Loadbalancer, Database, Webserver):
+## Opción A — Configuración con Vagrant
+
+### Configuración inicial
+
+Inicia el entorno, que requiere cuatro boxes (Ansible, Loadbalancer, Database, Webserver):
 
 ```bash
 vagrant up
 vagrant ssh ansible
 ```
-Create an SSH key to connect the VMs without password:
+
+Crea una clave SSH para conectarte a las VMs sin contraseña:
 
 ```bash
 ssh-keygen
 cat /home/vagrant/.ssh/id_rsa.pub
 ```
 
-Copy the public key to the VMs and set up the authorized keys:
+Copia la clave pública a las VMs y configura las authorized keys:
 
 ```bash
 vagrant@ansible$ ssh-copy-id vagrant@192.168.11.20
@@ -41,26 +56,94 @@ vagrant@ansible$ ssh-copy-id vagrant@192.168.11.30
 vagrant@ansible$ ssh-copy-id vagrant@192.168.11.40
 ```
 
-Verify SSH connection:
+Verifica la conexión SSH:
 
 ```bash
 ssh vagrant@192.168.11.20
 ```
 
-If any password is asked, the user is vagrant and the password is vagrant.
+Si se solicita contraseña, el usuario es `vagrant` y la contraseña es `vagrant`.
 
-### Important Note
+### Nota importante
 
-The configuration file priority order is as follows:
+El orden de prioridad del fichero de configuración es el siguiente:
 
-1. **ANSIBLE_CONFIG** (environment variable)
-2. **ansible.cfg** (current folder)
-3. **~/.ansible.cfg** (user home)
-4. **/etc/ansible/ansible.cfg** (general file)
+1. **ANSIBLE_CONFIG** (variable de entorno)
+2. **ansible.cfg** (carpeta actual)
+3. **~/.ansible.cfg** (home del usuario)
+4. **/etc/ansible/ansible.cfg** (fichero general)
 
-## Test the Environment
+---
 
-Set up Ansible Inventory on the Ansible box:
+## Opción B — Configuración con Docker
+
+### Arquitectura
+
+```
+┌─────────────────────────────────────────────────┐
+│              red: 192.168.11.0/24               │
+│                                                 │
+│  ansible       192.168.11.10  (nodo control)    │
+│  database      192.168.11.20  (MySQL/MariaDB)   │
+│  loadbalancer  192.168.11.30  (Nginx LB)        │
+│  webserver     192.168.11.40  (Apache/WordPress)│
+└─────────────────────────────────────────────────┘
+```
+
+### Despliegue inicial
+
+**1. Genera las claves SSH:**
+
+```bash
+mkdir -p ssh
+ssh-keygen -t rsa -b 2048 -f ssh/id_rsa -N ""
+```
+
+**2. Elimina redes Docker residuales:**
+
+```bash
+docker network prune -f
+```
+
+**3. Construye y arranca los contenedores:**
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+**4. Verifica que todo funciona:**
+
+```bash
+docker compose ps
+
+ssh -i ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.11.20
+ssh -i ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.11.30
+ssh -i ssh/id_rsa -o StrictHostKeyChecking=no vagrant@192.168.11.40
+```
+
+### Acceder al nodo de control
+
+```bash
+docker exec -it ansible bash
+```
+
+### Gestión de los contenedores
+
+| Acción | Comando |
+|---|---|
+| Ver estado | `docker compose ps` |
+| Parar todo | `docker compose down` |
+| Reiniciar un nodo | `docker compose restart webserver` |
+| Entrar en un nodo | `docker exec -it database bash` |
+| Ver logs | `docker compose logs -f ansible` |
+| Limpieza total | `docker compose down && docker system prune -a --volumes -f` |
+
+---
+
+## Probar el entorno
+
+Configura el inventario de Ansible en el nodo de control:
 
 ```bash
 mkdir example_ansible
@@ -68,29 +151,61 @@ mkdir example_ansible/hosts
 nano example_ansible/hosts/all
 ```
 
-Add the following lines to `hosts/all`:
+**Para Vagrant**, añade:
 
 ```ini
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3.12
+
 [database]
 192.168.11.20
+
 [loadbalancer]
 192.168.11.30
+
 [webserver]
 192.168.11.40
 ```
 
-Check if everything works:
+**Para Docker**, añade:
+
+```ini
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_user=vagrant
+ansible_ssh_private_key_file=/home/vagrant/.ssh/id_rsa
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[database]
+192.168.11.20
+
+[loadbalancer]
+192.168.11.30
+
+[webserver]
+192.168.11.40
+```
+
+Comprueba que todo funciona:
 
 ```bash
 cd example_ansible
-ansible -i hosts -u root -m ping all
+ansible -i hosts/all -m ping all
 ```
 
-### Initial Configuration and First YAML File
+Respuesta esperada:
 
-Create the file `request.yml`:
+```
+192.168.11.20 | SUCCESS => { "ping": "pong" }
+192.168.11.30 | SUCCESS => { "ping": "pong" }
+192.168.11.40 | SUCCESS => { "ping": "pong" }
+```
+
+---
+
+## Configuración inicial y primer fichero YAML
+
+Crea el fichero `request.yml`:
 
 ```yaml
 ---
@@ -113,38 +228,71 @@ Create the file `request.yml`:
         var: info.stdout
 ```
 
-Execute the playbook:
+Ejecuta el playbook:
 
 ```bash
-ansible-playbook -i hosts/all -u root request.yml --list-hosts --list-tasks
-ansible-playbook -i hosts/all -u root request.yml
+ansible-playbook -i hosts/all request.yml --list-hosts --list-tasks
+ansible-playbook -i hosts/all request.yml
 ```
 
-### Additional Examples
+### Ejemplos adicionales
 
-Various examples are available in the `examples` folder, covering different aspects of Ansible usage.
+Hay varios ejemplos disponibles en la carpeta `examples/`, que cubren diferentes aspectos del uso de Ansible.
 
-## Troubleshooting
+---
 
-If you encounter issues provisioning the box, you can download it directly and add it to Vagrant.
+## Solución de problemas
 
-## Common networking problems
+### Vagrant: problemas de aprovisionamiento
 
-If you have proxies or VPNs running on your machine, it is possible that Vagrant is not able to provision your environment.
+Si encuentras problemas al aprovisionar la box, puedes descargarla directamente y añadirla a Vagrant.
 
-Please check your connectivity before.
+### Problemas de red comunes
 
-## Support
+Si tienes proxies o VPNs activos en tu máquina, es posible que Vagrant o Docker no puedan aprovisionar el entorno correctamente. Comprueba tu conectividad antes de empezar.
 
-This tutorial is released into the public domain by [Agile611](http://www.agile611.com/) under Creative Commons Attribution-NonCommercial 4.0 International.
+### Docker: "No route to host"
+
+```bash
+# Comprueba si hay rutas en conflicto
+ip route | grep 192.168.11
+
+# Si aparece virbr* con la misma subred, elimínala
+sudo virsh net-list --all
+sudo virsh net-destroy <nombre>
+sudo virsh net-undefine <nombre>
+```
+
+### Docker: "Pool overlaps with other one"
+
+```bash
+docker network prune -f
+docker compose up -d
+```
+
+### Docker: SSH rechazado
+
+```bash
+# Verifica que el contenedor corre y tiene SSH activo
+docker exec -it ansible bash -c "systemctl status ssh"
+
+# Regenera las claves si es necesario
+ssh-keygen -t rsa -b 2048 -f ssh/id_rsa -N ""
+docker compose down && docker compose up -d
+```
+
+---
+
+## Soporte
+
+Este tutorial ha sido publicado en el dominio público por [Agile611](http://www.agile611.com/) bajo la licencia Creative Commons Attribution-NonCommercial 4.0 International.
 
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC_BY--NC_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
+Este fichero README fue escrito originalmente por [Guillem Hernández Sola](https://www.linkedin.com/in/guillemhs/) y se publica igualmente en el dominio público.
 
-This README file was originally written by [Guillem Hernández Sola](https://www.linkedin.com/in/guillemhs/) and is likewise released into the public domain.
-
-Please contact Agile611 for further details.
+Contacta con Agile611 para más información.
 
 * [Agile611](http://www.agile611.com/)
-* Laureà Miró 309
+* Carrer Laureà Miró 309
 * 08950 Esplugues de Llobregat (Barcelona)
