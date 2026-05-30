@@ -101,27 +101,10 @@ Configura el inventario de Ansible en el nodo de control:
 
 ```bash
 mkdir example_ansible
-mkdir example_ansible/hosts
-nano example_ansible/hosts/all
+nano example_ansible/hosts
 ```
 
-**Para Vagrant**, añade:
-
-```ini
-[all:vars]
-ansible_python_interpreter=/usr/bin/python3.12
-
-[database]
-192.168.11.20
-
-[loadbalancer]
-192.168.11.30
-
-[webserver]
-192.168.11.40
-```
-
-**Para Docker**, añade:
+**Genera un fichero hosts** y añade:
 
 ```ini
 [all:vars]
@@ -144,7 +127,7 @@ Comprueba que todo funciona:
 
 ```bash
 cd example_ansible
-ansible -i hosts/all -m ping all
+ansible -i hosts -u vagrant -m ping all
 ```
 
 Respuesta esperada:
