@@ -1,4 +1,3 @@
-```markdown
 # 001_apt — Introducción al módulo `apt` de Ansible
 
 Este ejemplo muestra cómo usar el módulo `apt` de Ansible para instalar
@@ -189,4 +188,3 @@ ansible-playbook -i hosts -u vagrant examples/001_apt/hostname.yml
 - [Documentación oficial del módulo apt](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_module.html)
 - [Documentación oficial del módulo command](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html)
 - [Repositorio completo: startusingansible](https://github.com/agile611/startusingansible)
-```
