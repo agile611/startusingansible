@@ -1,5 +1,5 @@
 ---
-- name: Reiniciar MySQL
+- name: Reiniciar MariaDB
   ansible.builtin.service:
-    name: mysql
+    name: mariadb
     state: restarted

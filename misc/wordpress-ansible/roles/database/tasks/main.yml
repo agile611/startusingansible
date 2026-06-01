@@ -4,7 +4,7 @@
     name: "{{ packages_database }}"
     state: present
     update_cache: yes
-  notify: Reiniciar MySQL
+  notify: Reiniciar MariaDB
 
 - name: Corregir permisos de /etc/mysql/my.cnf
   ansible.builtin.file:
@@ -18,40 +18,40 @@
     dest: /etc/mysql/my.cnf
     content: |
       !includedir /etc/mysql/conf.d/
-      !includedir /etc/mysql/mysql.conf.d/
+      !includedir /etc/mysql/mariadb.conf.d/
     owner: root
     group: root
     mode: '0644'
-  notify: Reiniciar MySQL
+  notify: Reiniciar MariaDB
 
 - name: Configurar bind-address per acceptar connexions remotes
   ansible.builtin.lineinfile:
-    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: '^bind-address'
     line: 'bind-address = 0.0.0.0'
-  notify: Reiniciar MySQL
+  notify: Reiniciar MariaDB
 
 - name: Configurar mysqlx-bind-address
   ansible.builtin.lineinfile:
-    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    path: /etc/mysql/mariadb.conf.d/50-server.cnf
     regexp: '^mysqlx-bind-address'
     line: 'mysqlx-bind-address = 0.0.0.0'
-  notify: Reiniciar MySQL
+  notify: Reiniciar MariaDB
 
-- name: Assegurar que MySQL està en execució
+- name: Assegurar que MariaDB està en execució
   ansible.builtin.service:
-    name: mysql
+    name: mariadb
     state: started
     enabled: yes
 
-- name: Flush handlers (reinicia MySQL abans de crear usuaris)
+- name: Flush handlers (reinicia MariaDB abans de crear usuaris)
   ansible.builtin.meta: flush_handlers
 
-# ✅ Fix Ubuntu 24.04: canviar auth_socket per mysql_native_password
+# ✅ Fix Debian 13: canviar unix_socket per mysql_native_password
 - name: Canviar autenticació de root a mysql_native_password
   ansible.builtin.shell: |
-    mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ db_root_password }}';"
-    mysql -u root -e "FLUSH PRIVILEGES;"
+    mariadb -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ db_root_password }}';"
+    mariadb -u root -e "FLUSH PRIVILEGES;"
   args:
     executable: /bin/bash
   become: true      

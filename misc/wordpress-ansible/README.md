@@ -4,14 +4,14 @@
 
 Plantilla per desplegar un entorn WordPress utilitzant Vagrant i Ansible. Inclou una màquina de control (Ansible), servidor web, base de dades i balancejador de càrrega, tots definits al `Vagrantfile`.
 
-**Objectiu:** facilitar el proveïment i les proves locals d'una arquitectura WordPress multinodo utilitzant caixes `bento/ubuntu-24.04`.
+**Objectiu:** facilitar el proveïment i les proves locals d'una arquitectura WordPress multinodo utilitzant Debian 13 amb MariaDB.
 
 ---
 
 ## Contingut principal
 
 - **`Vagrantfile`**: definició de les màquines (ansible, database, loadbalancer, webserver).
-- **`ansible.sh`** (si existeix): script de proveïment inicial utilitzat per la màquina `ansible`.
+- **`ansible.sh`**: script de proveïment inicial per instal·lar Ansible en Debian 13.
 - **Playbooks/rols**: afegeix els teus playbooks d'Ansible a una carpeta `ansible/` o similar.
 
 ---
