@@ -18,7 +18,7 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroupns: host
+    cgroup: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -43,7 +43,7 @@ services:
       - /run/lock
       - /tmp
     privileged: true
-    cgroupns: host
+    cgroup: host
     cap_add:
       - NET_ADMIN
 
@@ -65,7 +65,7 @@ services:
       - /run/lock
       - /tmp
     privileged: true
-    cgroupns: host
+    cgroup: host
     cap_add:
       - NET_ADMIN
 
@@ -87,7 +87,7 @@ services:
       - /run/lock
       - /tmp
     privileged: true
-    cgroupns: host
+    cgroup: host
     cap_add:
       - NET_ADMIN
 
