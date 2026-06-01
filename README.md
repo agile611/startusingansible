@@ -91,7 +91,100 @@ docker exec -it ansible bash
 | Reiniciar un nodo | `docker compose restart webserver` |
 | Entrar en un nodo | `docker exec -it database bash` |
 | Ver logs | `docker compose logs -f ansible` |
-| Limpieza total | `docker compose down && docker system prune -a --volumes -f` |
+| Limpieza total | `docker compose down --rmi all --volumes --remove-orphans && docker system prune -af` |
+
+### Verificar limpieza completa
+
+Después de ejecutar la limpieza, verifica que todo esté limpio:
+
+```bash
+docker compose down --rmi all --volumes --remove-orphans && docker system prune -af
+```
+
+Comprueba que ha quedado limpio:
+
+```bash
+docker images
+docker ps -a
+docker volume ls
+```
+
+Los tres comandos deberían retornar listas vacías.
+
+---
+
+### Configuración avanzada con `build-docker-compose.yml`
+
+Si necesitas una configuración más robusta con características avanzadas, utiliza el archivo `build-docker-compose.yml` en lugar del `docker-compose.yml` estándar.
+
+#### Diferencias principales
+
+| Característica | `docker-compose.yml` | `build-docker-compose.yml` |
+|---|---|---|
+| Volúmenes compartidos | Mínimos | ✅ Volúmenes host, workspace sync |
+| tmpfs (RAM disk) | No | ✅ `/run`, `/run/lock`, `/tmp` |
+| Capabilities | No | ✅ `NET_ADMIN` para laboratorios |
+| DNS personalizado | No | ✅ Google DNS (8.8.8.8) |
+| Modo privilegiado | No | ✅ Acceso completo a recursos |
+| Ideal para | Pruebas rápidas | Desarrollo y laboratorios |
+
+#### Cuándo usar `build-docker-compose.yml`
+
+- **Desarrollo local intensivo**: Necesitas acceso completo a recursos del sistema.
+- **Laboratorios de networking**: Requiere `NET_ADMIN` para manipular interfaces de red.
+- **Sincronización de archivos**: Sincroniza cambios locales con los contenedores en tiempo real.
+- **Simulación de entornos reales**: Comportamiento más cercano a máquinas virtuales.
+
+#### Uso de `build-docker-compose.yml`
+
+Para usar la configuración avanzada, especifica el archivo al ejecutar Docker Compose:
+
+```bash
+docker compose -f build-docker-compose.yml build
+docker compose -f build-docker-compose.yml up -d
+```
+
+O crea un alias para simplificar:
+
+```bash
+alias dc-build='docker compose -f build-docker-compose.yml'
+dc-build ps
+dc-build logs -f ansible
+```
+
+#### Características principales
+
+**1. Volúmenes compartidos**
+```yaml
+volumes:
+  - ./ssh:/home/vagrant/.ssh/host_keys       # Claves SSH persistentes
+  - .:/home/vagrant/workspace                # Sincroniza proyecto completo
+  - /home/vagrant/sync:/home/vagrant/sync    # Directorio de sincronización
+```
+
+**2. tmpfs (sistema de archivos en RAM)**
+```yaml
+tmpfs:
+  - /run
+  - /run/lock
+  - /tmp
+```
+Mejora el rendimiento de operaciones de lectura/escritura frecuentes.
+
+**3. Capabilities y privilegios**
+```yaml
+privileged: true                    # Acceso root completo
+cgroup: host                        # Acceso a cgroups del host
+cap_add:
+  - NET_ADMIN                       # Permisos de administración de red
+```
+
+**4. DNS personalizado**
+```yaml
+dns:
+  - 8.8.8.8
+  - 8.8.4.4
+```
 
 ---
 
