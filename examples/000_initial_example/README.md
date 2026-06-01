@@ -1,35 +1,35 @@
-# Primeros Pasos con Ansible: Ejemplo Inicial
+# 🚀 Ansible Example 000 — Initial Example
 
-En esta guía encontrarás los ficheros necesarios y la explicación paso a paso para entender cómo funciona tu primera automatización con Ansible.
+Este es el **ejemplo inicial de Ansible**: una primera automatización que conecta con todos los
+servidores del inventario, ejecuta el comando `hostname` y muestra el nombre de cada máquina por
+pantalla. Es el "Hola Mundo" de Ansible.
 
 ---
 
-## 📋 Ficheros del Proyecto
+## 🗂️ Inventario (`hosts`)
 
-Para ejecutar este ejemplo, necesitas crear dos archivos. Uno contendrá el inventario (la lista de máquinas y su configuración) y el otro el *playbook* (las instrucciones).
+El fichero `hosts` define los grupos de máquinas y las variables globales de conexión.
 
-### 1. Archivo de Inventario (`hosts`)
-Guárdalo en la carpeta principal desde donde vas a ejecutar el comando.
+### Variables globales (`[all:vars]`)
 
-```ini
-[all:vars]
-ansible_python_interpreter=/usr/bin/python3
-ansible_user=vagrant
-ansible_ssh_private_key_file=/home/vagrant/.ssh/id_rsa
-ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+| Variable | Valor | Descripción |
+|---|---|---|
+| `ansible_python_interpreter` | `/usr/bin/python3` | Fuerza el uso de Python 3 en los hosts remotos |
+| `ansible_user` | `vagrant` | Usuario SSH con el que se conecta Ansible |
+| `ansible_ssh_private_key_file` | `/home/vagrant/.ssh/id_rsa` | Clave privada SSH para autenticación sin contraseña |
+| `ansible_ssh_common_args` | `-o StrictHostKeyChecking=no` | Evita la verificación del fingerprint del host (útil en entornos de laboratorio) |
 
-[database]
-192.168.11.20
+### Grupos de hosts
 
-[loadbalancer]
-192.168.11.30
+| Grupo | IP |
+|---|---|
+| `[database]` | `192.168.11.20` |
+| `[loadbalancer]` | `192.168.11.30` |
+| `[webserver]` | `192.168.11.40` |
 
-[webserver]
-192.168.11.40
-```
+---
 
-### 2. Archivo Playbook (`000_initial_example.yml`)
-Guárdalo respetando la ruta de carpetas: `examples/000_initial_example/000_initial_example.yml`.
+## 📄 El Playbook (`000_initial_example.yml`)
 
 ```yaml
 ---
@@ -44,39 +44,105 @@ Guárdalo respetando la ruta de carpetas: `examples/000_initial_example/000_init
 
 ---
 
-## 🧭 ¿Qué hace esto? (Explicación para alumnos)
+## 🔍 Qué hace el Playbook paso a paso
 
-Para entender Ansible, hay que imaginarlo como un **director de orquesta**. Tú le das una partitura (el *Playbook*) y le dices quiénes son los músicos (el *Inventario*). Ansible se encarga de que todos toquen la melodía exacta al mismo tiempo.
+### 1. Selección de hosts (`hosts: all`)
 
-### El Inventario (`hosts`)
-Es la **agenda de contactos y el manual de conexión**. En este archivo no solo le decimos a Ansible cuáles son las direcciones IP de las máquinas, sino también cómo debe conectarse a ellas.
-- **Grupos de máquinas**: Hemos organizado nuestros servidores por su función: `[database]` (base de datos), `[loadbalancer]` (balanceador de carga) y `[webserver]` (servidor web).
-- **Variables globales (`[all:vars]`)**: Son las "reglas del juego" para todas las máquinas. Le decimos a Ansible que use Python 3, que se conecte con el usuario `vagrant`, dónde está la llave de seguridad (clave SSH) para entrar sin contraseña, y que no nos pregunte por confirmaciones de seguridad al conectarse por primera vez.
+```yaml
+- hosts: all
+```
 
-### El Playbook (`000_initial_example.yml`)
-Es la **receta paso a paso** de lo que queremos que Ansible haga. Está escrito en un lenguaje llamado YAML, que es muy fácil de leer para los humanos.
-- **`hosts: all`**: Le dice a Ansible que ejecute esto en *todas* las máquinas del inventario.
-- **`tasks` (Tareas)**: Son las acciones concretas. Aquí hacemos dos cosas muy interesantes:
-  1. **`command: hostname`**: Le decimos a Ansible que ejecute el comando de Linux `hostname` en las máquinas remotas para averiguar cómo se llaman.
-  2. **`ansible.builtin.debug`**: Le pedimos que nos muestre esa información por pantalla. Al usar `ansible_facts['hostname']`, estamos accediendo a los "facts" (datos que Ansible recopila automáticamente sobre cada máquina al conectarse) para imprimir el nombre real del servidor.
+- Le indica a Ansible que ejecute el playbook en **todas las máquinas** definidas en el inventario.
+- En este caso actuará sobre los tres servidores: `192.168.11.20`, `192.168.11.30` y `192.168.11.40`.
 
 ---
 
-## 🚀 Entendiendo el Comando de Ejecución
+### 2. Ejecutar el comando `hostname` en remoto (`command`)
 
-Para poner en marcha esta receta, utilizamos el siguiente comando en la terminal:
+```yaml
+- name: get server hostname
+  command: hostname
+```
+
+- Usa el módulo **`command`** para ejecutar el comando Linux `hostname` directamente en cada servidor remoto.
+- El módulo `command` ejecuta comandos de shell sin pasar por un intérprete (`/bin/sh`), lo que lo hace
+  más seguro y predecible que el módulo `shell`.
+- El resultado queda registrado internamente, pero no se muestra aún por pantalla.
+
+---
+
+### 3. Mostrar el hostname por pantalla (`ansible.builtin.debug`)
+
+```yaml
+- name: Debug hostname
+  ansible.builtin.debug:
+    var: ansible_facts['hostname']
+```
+
+- Usa el módulo **`ansible.builtin.debug`** para imprimir información en la salida del terminal.
+- **`ansible_facts['hostname']`** accede a los *facts* de Ansible: datos que Ansible recopila
+  automáticamente sobre cada máquina al inicio de la conexión (sistema operativo, IP, hostname, memoria, etc.).
+- El resultado se muestra de forma ordenada por host en la terminal del nodo de control.
+
+> 💡 **¿Qué son los Ansible Facts?**
+> Al conectarse a cada host, Ansible ejecuta automáticamente un módulo llamado `gather_facts`
+> que recopila información del sistema: nombre del host, distribución Linux, interfaces de red,
+> memoria disponible, etc. Todo queda accesible en el diccionario `ansible_facts`.
+
+---
+
+## ▶️ Comando de ejecución
 
 ```bash
 ansible-playbook -i hosts -u vagrant examples/000_initial_example/000_initial_example.yml
 ```
 
-Con esta línea, le estás dando a Ansible cuatro instrucciones muy precisas:
+| Parámetro | Descripción |
+|---|---|
+| `ansible-playbook` | Comando principal para ejecutar un playbook |
+| `-i hosts` | Especifica el fichero de inventario (`hosts`) |
+| `-u vagrant` | Usuario SSH con el que conectarse a los hosts remotos |
+| `examples/000_initial_example/000_initial_example.yml` | Ruta al fichero playbook a ejecutar |
 
-| **Parte del comando** | **¿Qué significa?** |
-|-----------------------|---------------------|
-| `ansible-playbook` | Es la orden principal: "¡Ansible, prepárate para ejecutar una receta!" |
-| `-i hosts` | **i** de *Inventory*. Le dice: "Lee la lista de máquinas y configuraciones que está en el archivo llamado `hosts`". |
-| `-u vagrant` | **u** de *User*. Le dice: "Conéctate a esas máquinas utilizando el nombre de usuario `vagrant`". |
-| `examples/.../.yml` | Es la ruta exacta donde está guardada la receta (el archivo YAML) que queremos ejecutar. |
+> **Nota:** Como el inventario ya define `ansible_user=vagrant`, el flag `-u vagrant` es redundante
+> pero no genera ningún conflicto.
 
-**Resultado:** Al pulsar *Enter*, Ansible viajará por la red, entrará en tus tres servidores (192.168.11.20, .30 y .40) usando las llaves SSH, ejecutará el comando para descubrir el nombre de cada máquina y te lo mostrará de forma ordenada en tu pantalla. ¡Todo en cuestión de segundos!
+---
+
+## 📊 Flujo de ejecución
+
+```
+Tu máquina (nodo de control)
+        │
+        ├──► SSH → 192.168.11.20 (database)   → ejecuta hostname → muestra resultado
+        ├──► SSH → 192.168.11.30 (loadbalancer) → ejecuta hostname → muestra resultado
+        └──► SSH → 192.168.11.40 (webserver)   → ejecuta hostname → muestra resultado
+```
+
+Ansible se conecta a los tres servidores **en paralelo** (por defecto, en lotes de 5 hosts),
+ejecuta las tareas en cada uno y devuelve los resultados ordenados en la terminal.
+
+---
+
+## 💡 Conceptos clave del ejemplo
+
+- **Playbook**: la "receta" escrita en YAML que describe qué tareas ejecutar y en qué máquinas.
+- **Inventario**: la "agenda de contactos" que lista los hosts y cómo conectarse a ellos.
+- **`hosts: all`**: selector que apunta a todos los hosts del inventario.
+- **Módulo `command`**: ejecuta comandos en el host remoto de forma segura sin shell intermedio.
+- **Módulo `debug`**: imprime variables o mensajes en la salida de Ansible, muy útil para verificar valores.
+- **`ansible_facts`**: diccionario con información del sistema recopilada automáticamente al conectarse.
+- **Idempotencia**: aunque `command` no es idempotente por naturaleza, en este caso solo lee
+  información (no modifica nada), por lo que es seguro ejecutarlo múltiples veces.
+
+---
+
+## 🗃️ Estructura de ficheros del ejemplo
+
+```
+startusingansible/
+├── hosts                                        # Inventario (raíz del proyecto)
+└── examples/
+    └── 000_initial_example/
+        └── 000_initial_example.yml              # Playbook principal
+```
