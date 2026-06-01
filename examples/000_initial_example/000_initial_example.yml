@@ -3,6 +3,7 @@
     tasks:
       - name: get server hostname
         command: hostname
-      - name: Debug hostname
-        ansible.builtin.debug:
-          var: ansible_facts['hostname']
+        register: hostname_output
+      - name: print hostname
+        debug:
+          msg: "The hostname of the server is {{ hostname_output.stdout }}"
