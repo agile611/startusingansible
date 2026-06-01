@@ -10,7 +10,10 @@ services:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
       - /home/vagrant/sync:/home/vagrant/sync
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
     stdin_open: true
     tty: true
     privileged: true
@@ -31,8 +34,10 @@ services:
       - "8081:80"
       - "3306:3306"
       - "2220:22"
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -48,8 +53,10 @@ services:
       - "8080:80"
       - "33061:3306"
       - "2221:22"
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -65,8 +72,10 @@ services:
       - "80:80"
       - "33062:3306"
       - "2222:22"
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    tmpfs:
+      - /run
+      - /run/lock
+      - /tmp
     privileged: true
     cap_add:
       - NET_ADMIN
