@@ -44,7 +44,7 @@ packages_webserver:
   - wget
 
 packages_database:
-  - mysql-server
+  - default-mysql-server
   - python3-pip
   - python3-pymysql
 
