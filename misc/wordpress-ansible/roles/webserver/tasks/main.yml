@@ -1,0 +1,64 @@
+---
+- name: Instalar paquetes del servidor web
+  ansible.builtin.apt:
+    name: "{{ packages_webserver }}"
+    state: present
+    update_cache: yes
+
+- name: Assegurar que Apache està en execució
+  ansible.builtin.service:
+    name: apache2
+    state: started
+    enabled: yes
+
+- name: Crear directori d'instal·lació de WordPress
+  ansible.builtin.file:
+    path: "{{ wp_install_dir }}"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: '0755'
+
+- name: Descarregar WordPress
+  ansible.builtin.get_url:
+    url: "https://wordpress.org/wordpress-{{ wp_version }}.tar.gz"
+    dest: /tmp/wordpress.tar.gz
+
+- name: Extreure WordPress
+  ansible.builtin.unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: /var/www/html/
+    remote_src: yes
+    owner: www-data
+    group: www-data
+    creates: "{{ wp_install_dir }}/wp-login.php"
+
+- name: Copiar wp-config.php
+  ansible.builtin.template:
+    src: wp-config.php.j2
+    dest: "{{ wp_install_dir }}/wp-config.php"
+    owner: www-data
+    group: www-data
+    mode: '0640'
+
+- name: Configurar VirtualHost d'Apache per WordPress
+  ansible.builtin.template:
+    src: wordpress.conf.j2
+    dest: /etc/apache2/sites-available/wordpress.conf
+  notify: Reiniciar Apache
+
+- name: Activar el site de WordPress
+  ansible.builtin.command:
+    cmd: a2ensite wordpress.conf
+  notify: Reiniciar Apache
+
+- name: Activar mòdul rewrite d'Apache
+  ansible.builtin.apache2_module:
+    name: rewrite
+    state: present
+  notify: Reiniciar Apache
+
+- name: Desactivar el site per defecte
+  ansible.builtin.command:
+    cmd: a2dissite 000-default.conf
+  notify: Reiniciar Apache

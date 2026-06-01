@@ -1,0 +1,97 @@
+---
+- name: Instalar paquetes de la base de datos
+  ansible.builtin.apt:
+    name: "{{ packages_database }}"
+    state: present
+    update_cache: yes
+  notify: Reiniciar MySQL
+
+- name: Corregir permisos de /etc/mysql/my.cnf
+  ansible.builtin.file:
+    path: /etc/mysql/my.cnf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Configurar /etc/mysql/my.cnf correctament
+  ansible.builtin.copy:
+    dest: /etc/mysql/my.cnf
+    content: |
+      !includedir /etc/mysql/conf.d/
+      !includedir /etc/mysql/mysql.conf.d/
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reiniciar MySQL
+
+- name: Configurar bind-address per acceptar connexions remotes
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^bind-address'
+    line: 'bind-address = 0.0.0.0'
+  notify: Reiniciar MySQL
+
+- name: Configurar mysqlx-bind-address
+  ansible.builtin.lineinfile:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '^mysqlx-bind-address'
+    line: 'mysqlx-bind-address = 0.0.0.0'
+  notify: Reiniciar MySQL
+
+- name: Assegurar que MySQL està en execució
+  ansible.builtin.service:
+    name: mysql
+    state: started
+    enabled: yes
+
+- name: Flush handlers (reinicia MySQL abans de crear usuaris)
+  ansible.builtin.meta: flush_handlers
+
+# ✅ Fix Ubuntu 24.04: canviar auth_socket per mysql_native_password
+- name: Canviar autenticació de root a mysql_native_password
+  ansible.builtin.shell: |
+    mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '{{ db_root_password }}';"
+    mysql -u root -e "FLUSH PRIVILEGES;"
+  args:
+    executable: /bin/bash
+  become: true      
+  ignore_errors: true  # Ignorar errors si ja s'ha canviat abans
+
+# ✅ Crear /root/.my.cnf perquè community.mysql pugui autenticar-se
+- name: Crear /root/.my.cnf amb credencials de root
+  ansible.builtin.copy:
+    dest: /root/.my.cnf
+    content: |
+      [client]
+      user=root
+      password={{ db_root_password }}
+    owner: root
+    group: root
+    mode: '0600'
+
+- name: DEBUG - Mostrar contrasenya que usa Ansible
+  ansible.builtin.debug:
+    msg: "db_root_password = '{{ db_root_password }}'"
+
+- name: Crear la base de dades de WordPress
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+
+- name: Crear l'usuari de WordPress amb accés remot
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_password }}"
+    priv: "{{ db_name }}.*:ALL"
+    host: "%"
+    state: present
+    login_user: root
+    login_password: "{{ db_root_password }}"
+
+# ✅ Eliminar /root/.my.cnf per seguretat un cop acabat
+- name: Eliminar /root/.my.cnf per seguretat
+  ansible.builtin.file:
+    path: /root/.my.cnf
+    state: absent

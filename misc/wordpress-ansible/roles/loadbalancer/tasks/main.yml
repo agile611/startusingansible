@@ -1,0 +1,31 @@
+---
+- name: Instalar Nginx
+  ansible.builtin.apt:
+    name: "{{ packages_loadbalancer }}"
+    state: present
+    update_cache: yes
+
+- name: Copiar configuració de Nginx
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/wordpress
+  notify: Reiniciar Nginx
+
+- name: Activar el site de WordPress a Nginx
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/wordpress
+    dest: /etc/nginx/sites-enabled/wordpress
+    state: link
+  notify: Reiniciar Nginx
+
+- name: Eliminar el site per defecte de Nginx
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reiniciar Nginx
+
+- name: Assegurar que Nginx està en execució
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: yes

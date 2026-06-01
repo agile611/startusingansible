@@ -1,0 +1,52 @@
+---
+# Versions
+wordpress_version: "6.8.3"
+wp_version: "{{ wordpress_version }}"
+wordpress_url: "https://wordpress.org/wordpress-{{ wordpress_version }}.zip"
+
+# Base de dades
+db_root_password: "{{ vault_db_root_password }}"
+db_name: "wordpress"
+db_user: "wordpress"
+db_password: "{{ vault_db_password }}"
+db_host: "192.168.11.20"
+wordpress_db_host: "192.168.11.20"
+mysql_bind_address: "0.0.0.0"
+mysql_port: 3306
+
+# WordPress
+wp_install_dir: "/var/www/html/wordpress"
+wp_url: "http://192.168.11.40"
+wp_site_url: "http://192.168.11.40"
+wp_admin_user: "admin"
+wp_admin_password: "{{ vault_wp_admin_password }}"
+wp_admin_email: "admin@example.com"
+
+# Xarxa
+webserver_ip: "192.168.11.40"
+lb_port: 80
+http_port: 80
+https_port: 443
+
+# Paquets
+packages_webserver:
+  - apache2
+  - php
+  - php-cli
+  - php-fpm
+  - php-mysql
+  - php-xml
+  - php-curl
+  - php-mbstring
+  - php-zip
+  - libapache2-mod-php
+  - unzip
+  - wget
+
+packages_database:
+  - mysql-server
+  - python3-pip
+  - python3-pymysql
+
+packages_loadbalancer:
+  - nginx

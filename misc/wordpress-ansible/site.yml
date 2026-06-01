@@ -1,0 +1,21 @@
+---
+- hosts: database
+  become: true
+  vars_files:
+    - group_vars/vault.yml
+  roles:
+    - database
+
+- hosts: webserver
+  become: true
+  vars_files:
+    - group_vars/vault.yml
+  roles:
+    - webserver
+
+- hosts: loadbalancer
+  become: true
+  vars_files:
+    - group_vars/vault.yml
+  roles:
+    - loadbalancer
