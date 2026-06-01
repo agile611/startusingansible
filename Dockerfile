@@ -1,11 +1,10 @@
 FROM debian:trixie
 
-LABEL maintainer='tu@domini.cat'
+LABEL maintainer='guillem@agile611.com'
 
 ENV container=docker \
     DEBIAN_FRONTEND=noninteractive
 
-# Instal·lació de paquets
 RUN apt-get update && apt-get install -y --no-install-recommends \
     findutils \
     iproute2 \
@@ -19,13 +18,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dnsutils \
     iputils-ping \
     openssh-server \
-    net-tools \
     systemd \
     systemd-sysv \
+    telnet \
+    net-tools \
+    netcat-openbsd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Neteja de units de systemd innecessàries per a Docker
+# Neteja units innecessàries per a Docker
 RUN find /etc/systemd/system \
         /lib/systemd/system \
         -path '*.wants/*' \
@@ -33,6 +34,17 @@ RUN find /etc/systemd/system \
         -not -name '*systemd-tmpfiles*' \
         -not -name '*systemd-user-sessions*' \
         -print0 | xargs -0 rm -vf
+
+# Desactiva serveis incompatibles amb Docker
+RUN systemctl mask \
+    getty.target \
+    console-getty.service \
+    systemd-logind.service \
+    systemd-remount-fs.service \
+    systemd-ask-password-wall.path
+
+# Redueix el soroll de journald
+RUN echo "ReadKMsg=no" >> /etc/systemd/journald.conf
 
 # Usuari vagrant amb sudo sense contrasenya
 RUN useradd -m -s /bin/bash vagrant && \
@@ -62,5 +74,4 @@ VOLUME ["/sys/fs/cgroup"]
 
 EXPOSE 22
 
-# systemd és el PID 1 — ell arrancarà SSH automàticament
 ENTRYPOINT ["/lib/systemd/systemd"]

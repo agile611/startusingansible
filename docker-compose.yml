@@ -10,7 +10,7 @@ services:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
       - /home/vagrant/sync:/home/vagrant/sync
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     stdin_open: true
     tty: true
     privileged: true
@@ -32,7 +32,7 @@ services:
       - "3306:3306"
       - "2220:22"
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -49,7 +49,7 @@ services:
       - "33061:3306"
       - "2221:22"
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -66,7 +66,7 @@ services:
       - "33062:3306"
       - "2222:22"
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     privileged: true
     cap_add:
       - NET_ADMIN
