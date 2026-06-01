@@ -1,22 +1,38 @@
-FROM ubuntu:24.04
+FROM debian:trixie
 
-ENV DEBIAN_FRONTEND=noninteractive
+LABEL maintainer='tu@domini.cat'
 
-RUN apt-get update && apt-get install -y \
-    openssh-server \
+ENV container=docker \
+    DEBIAN_FRONTEND=noninteractive
+
+# Instal·lació de paquets
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    findutils \
+    iproute2 \
     python3 \
-    python3-pip \
+    python3-apt \
     sudo \
     curl \
     vim \
     nano \
     git \
-    ansible \
     dnsutils \
-    iproute2 \
     iputils-ping \
+    openssh-server \
+    net-tools \
+    systemd \
+    systemd-sysv \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Neteja de units de systemd innecessàries per a Docker
+RUN find /etc/systemd/system \
+        /lib/systemd/system \
+        -path '*.wants/*' \
+        -not -name '*journald*' \
+        -not -name '*systemd-tmpfiles*' \
+        -not -name '*systemd-user-sessions*' \
+        -print0 | xargs -0 rm -vf
 
 # Usuari vagrant amb sudo sense contrasenya
 RUN useradd -m -s /bin/bash vagrant && \
@@ -28,17 +44,23 @@ RUN mkdir -p /var/run/sshd && \
     mkdir -p /home/vagrant/.ssh && \
     chmod 700 /home/vagrant/.ssh
 
-# Genera la clau SSH per a l'usuari vagrant
+# Genera clau SSH per a l'usuari vagrant
 RUN ssh-keygen -t rsa -b 4096 -f /home/vagrant/.ssh/id_rsa -N "" && \
     cp /home/vagrant/.ssh/id_rsa.pub /home/vagrant/.ssh/authorized_keys && \
     chmod 600 /home/vagrant/.ssh/authorized_keys /home/vagrant/.ssh/id_rsa && \
     chown -R vagrant:vagrant /home/vagrant/.ssh
 
-# Permet login SSH amb clau
+# Configuració sshd_config
 RUN sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
     sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config && \
     sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
+# Habilita SSH com a servei de systemd
+RUN systemctl enable ssh
+
+VOLUME ["/sys/fs/cgroup"]
+
 EXPOSE 22
 
-CMD ["/usr/sbin/sshd", "-D"]
+# systemd és el PID 1 — ell arrancarà SSH automàticament
+ENTRYPOINT ["/lib/systemd/systemd"]
