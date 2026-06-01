@@ -37,9 +37,10 @@ El fichero `hosts` define los grupos de máquinas y las variables globales de co
     tasks:
       - name: get server hostname
         command: hostname
-      - name: Debug hostname
-        ansible.builtin.debug:
-          var: ansible_facts['hostname']
+        register: hostname_output
+      - name: print hostname
+        debug:
+          msg: "The hostname of the server is {{ hostname_output.stdout }}"
 ```
 
 ---
@@ -57,37 +58,45 @@ El fichero `hosts` define los grupos de máquinas y las variables globales de co
 
 ---
 
-### 2. Ejecutar el comando `hostname` en remoto (`command`)
+### 2. Ejecutar el comando `hostname` en remoto y guardar el resultado (`command` + `register`)
 
 ```yaml
 - name: get server hostname
   command: hostname
+  register: hostname_output
 ```
 
 - Usa el módulo **`command`** para ejecutar el comando Linux `hostname` directamente en cada servidor remoto.
 - El módulo `command` ejecuta comandos de shell sin pasar por un intérprete (`/bin/sh`), lo que lo hace
   más seguro y predecible que el módulo `shell`.
-- El resultado queda registrado internamente, pero no se muestra aún por pantalla.
+- **`register: hostname_output`** guarda el resultado completo de la ejecución en la variable `hostname_output`.
+  Esta variable contiene:
+  - `hostname_output.stdout`: la salida estándar del comando (el nombre del host)
+  - `hostname_output.stderr`: la salida de errores (si los hay)
+  - `hostname_output.rc`: el código de retorno (0 si fue exitoso)
 
 ---
 
-### 3. Mostrar el hostname por pantalla (`ansible.builtin.debug`)
+### 3. Mostrar el hostname por pantalla (`debug`)
 
 ```yaml
-- name: Debug hostname
-  ansible.builtin.debug:
-    var: ansible_facts['hostname']
+- name: print hostname
+  debug:
+    msg: "The hostname of the server is {{ hostname_output.stdout }}"
 ```
 
-- Usa el módulo **`ansible.builtin.debug`** para imprimir información en la salida del terminal.
-- **`ansible_facts['hostname']`** accede a los *facts* de Ansible: datos que Ansible recopila
-  automáticamente sobre cada máquina al inicio de la conexión (sistema operativo, IP, hostname, memoria, etc.).
-- El resultado se muestra de forma ordenada por host en la terminal del nodo de control.
+- Usa el módulo **`debug`** para imprimir información en la salida del terminal.
+- Accede a **`hostname_output.stdout`** para obtener el nombre del host capturado en la tarea anterior.
+- Usa la sintaxis **Jinja2** (`{{ ... }}`) para interpolar variables dentro del mensaje.
+- El resultado se muestra de forma clara y personalizada en la terminal: `"The hostname of the server is [hostname]"`.
 
-> 💡 **¿Qué son los Ansible Facts?**
-> Al conectarse a cada host, Ansible ejecuta automáticamente un módulo llamado `gather_facts`
-> que recopila información del sistema: nombre del host, distribución Linux, interfaces de red,
-> memoria disponible, etc. Todo queda accesible en el diccionario `ansible_facts`.
+> 💡 **¿Qué es `register`?**
+> El atributo `register` captura la salida completa de una tarea en una variable que puedes reutilizar
+> en tareas posteriores. Es fundamental en Ansible para:
+> - Capturar resultados de comandos
+> - Usar salidas como entrada en tareas siguientes
+> - Validar resultados con condiciones (`when`)
+> - Mostrar información específica de forma personalizada
 
 ---
 
