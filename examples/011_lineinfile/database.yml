@@ -2,11 +2,11 @@
 - hosts: database
   become: true
   tasks:
-    - name: Remove packages for a VM problem using mysql
-      command: apt-get -y purge mysql-server mysql-client mysql-common
+    - name: Remove packages from mysql
+      command: apt-get -y purge default-mysql-server default-mysql-client mysql-common
 
-    - name: install mysql-server
-      apt: name=mysql-server state=present update_cache=yes
+    - name: install default-mysql-server
+      apt: name=default-mysql-server state=present update_cache=yes
 
     - name: ensure mysql started
       service: name=mysql state=started enabled=yes
