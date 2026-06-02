@@ -1,2 +1,7 @@
 ---
 # tasks file for status-webserver
+- name: verify apache2 service
+  command: service apache2 status
+
+- name: verify apache2 is listening on 80
+  wait_for: port=80 timeout=1

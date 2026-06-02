@@ -1,2 +1,7 @@
 ---
 # tasks file for status-database
+- name: verify mysql service
+  command: service mysql status
+
+- name: verify mysql is listening on 3306
+  wait_for: port=3306 timeout=1

@@ -1,2 +1,27 @@
 ---
 # tasks file for status-loadbalancer
+- name: verify nginx service
+  command: service nginx status
+
+- name: verify nginx is listening on 80
+  wait_for: port=80 timeout=1
+
+- name: verify backend index response
+  uri: url=http://{{item}} return_content=yes
+  with_items: "{{ groups.webserver }}"
+  register: app_index
+
+- name: verify backend index response
+  fail: msg="index failed to return content"
+  when: "'Hello, from sunny' not in item.content"
+  with_items: "{{app_index.results}}"
+
+- name: verify backend db response
+  uri: url=http://{{item}}/db return_content=yes
+  with_items: "{{ groups.webserver }}"
+  register: app_db
+
+- name: verify backend db response
+  fail: msg="db failed to return content"
+  when: "'Database Connected from' not in item.content"
+  with_items: "{{app_db.results}}"
