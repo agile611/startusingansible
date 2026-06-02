@@ -1,8 +1,8 @@
 ---
-- import-playbook: control.yml
-- import-playbook: database.yml
-- import-playbook: webserver.yml
-- import-playbook: loadbalancer.yml
-- import-playbook: playbook/stack_status.yml
-- import-playbook: playbook/stack_restart.yml
-- import-playbook: playbook/stack_status.yml
+- include: control.yml
+- include: database.yml
+- include: webserver.yml
+- include: loadbalancer.yml
+- include: playbook/stack_status.yml
+- include: playbook/stack_restart.yml
+- include: playbook/stack_status.yml
