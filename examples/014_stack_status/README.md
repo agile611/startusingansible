@@ -6,8 +6,6 @@ Este ejemplo introduce dos módulos nuevos de Ansible: `uri` y `fail`. Juntos pe
 
 La novedad principal respecto al ejemplo anterior (`013_wait_for`) está en `playbooks/stack_status.yml`: además de verificar que los puertos están abiertos con `wait_for`, ahora se realizan **pruebas HTTP end-to-end** desde el nodo de control hacia el loadbalancer, y desde el loadbalancer hacia los webservers, comprobando tanto la ruta `/` (aplicación) como la ruta `/db` (conectividad con base de datos).
 
-En los playbooks de despliegue, `loadbalancer.yml` añade `python-httplib2` como dependencia necesaria para que el módulo `uri` funcione, y `control.yml` también la instala en el nodo de control.
-
 ---
 
 ## 🗂️ Estructura del proyecto
@@ -15,19 +13,20 @@ En los playbooks de despliegue, `loadbalancer.yml` añade `python-httplib2` como
 ```
 014_stack_status/
 ├── hosts                          # Inventario de máquinas
-├── control.yml                    # Playbook para el nodo de control ⭐ MODIFICADO
+├── site.yml                       # Orchestración completa del stack
+├── control.yml                    # Playbook para el nodo de control
 ├── database.yml                   # Playbook para el servidor de base de datos
-├── loadbalancer.yml               # Playbook para el balanceador de carga ⭐ MODIFICADO
+├── loadbalancer.yml               # Playbook para el balanceador de carga
 ├── webserver.yml                  # Playbook para el servidor web
 ├── templates/
 │   └── nginx.conf.j2              # Plantilla Jinja2 para configurar Nginx
 ├── demo/
 │   ├── app/                       # Código fuente de la aplicación Python/Flask
 │   └── demo.conf                  # Configuración VirtualHost de Apache
-└── playbooks/                     # Utilidades operacionales ⭐ MODIFICADAS
+└── playbooks/                     # Utilidades operacionales
     ├── hostname.yml               # Consulta el hostname de todos los nodos
     ├── stack_restart.yml          # Reinicia el stack con wait_for entre pasos
-    └── stack_status.yml           # Verificación completa del stack ⭐ AMPLIADO
+    └── stack_status.yml           # Verificación completa del stack
 ```
 
 ---
@@ -67,7 +66,7 @@ Los tres grupos definen máquinas con roles diferenciados:
 
 ---
 
-## ⭐ Novedad en `control.yml` — `python-httplib2`
+## 📜 `control.yml` — Herramientas de diagnóstico
 
 ```yaml
 ---
@@ -78,15 +77,13 @@ Los tres grupos definen máquinas con roles diferenciados:
       apt: name={{item}} state=present update_cache=yes
       with_items:
         - curl
-        - python-httplib2
 ```
 
-Se añade `python-httplib2` a la lista de herramientas del nodo de control. Esta librería Python es la dependencia que necesita el módulo `uri` de Ansible para realizar peticiones HTTP desde el nodo de control hacia el loadbalancer durante las pruebas end-to-end de `stack_status.yml`.
+Instala herramientas de diagnóstico en el nodo de control. El módulo `uri` usa la librería HTTP de Python estándar para realizar peticiones HTTP hacia el loadbalancer durante las pruebas end-to-end de `stack_status.yml`.
 
 | **Paquete** | **Descripción** |
 |---|---|
-| `curl` | Herramienta de línea de comandos para peticiones HTTP (ya existía) |
-| `python-httplib2` | ⭐ **Nuevo** — Librería HTTP para Python, requerida por el módulo `uri` de Ansible |
+| `curl` | Herramienta de línea de comandos para peticiones HTTP |
 
 ### Comando de ejecución
 
@@ -96,18 +93,13 @@ ansible-playbook -i hosts -u vagrant control.yml
 
 ---
 
-## ⭐ Novedad en `loadbalancer.yml` — `python-httplib2`
+## 📜 `loadbalancer.yml` — Nginx y configuración de balanceo
 
 ```yaml
 ---
 - hosts: loadbalancer
   become: true
   tasks:
-    - name: install tools
-      apt: name={{item}} state=present update_cache=yes
-      with_items:
-        - python-httplib2          # ⭐ NUEVO
-
     - name: install nginx
       apt: name=nginx state=present update_cache=yes
 
@@ -131,7 +123,7 @@ ansible-playbook -i hosts -u vagrant control.yml
       service: name=nginx state=restarted
 ```
 
-Se añade una tarea inicial que instala `python-httplib2` en el nodo loadbalancer. Esta librería es necesaria porque `stack_status.yml` usa el nodo loadbalancer como origen de las peticiones HTTP hacia los webservers, y el módulo `uri` la requiere en el nodo que ejecuta las tareas.
+Instala Nginx, activa el sitio de demostración y configura los handlers para reiniciar el servicio cuando cambian los archivos de configuración. El nodo loadbalancer actúa como proxy reverso hacia los webservers.
 
 ### Comando de ejecución
 
@@ -141,7 +133,7 @@ ansible-playbook -i hosts -u vagrant loadbalancer.yml
 
 ---
 
-## 📜 `database.yml` — Sin cambios respecto a 013
+## 📜 `database.yml` — MySQL/MariaDB y base de datos
 
 ```yaml
 ---
@@ -152,15 +144,13 @@ ansible-playbook -i hosts -u vagrant loadbalancer.yml
       apt: name={{item}} state=present update_cache=yes
       with_items:
         - python3-mysqldb
-
-    - name: install mysql-server
-      apt: name=mysql-server state=present update_cache=yes
+        - default-mysql-server
 
     - name: ensure mysql started
       service: name=mysql state=started enabled=yes
 
     - name: ensure mysql listening on all ports
-      lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address line="bind-address = 0.0.0.0"
+      lineinfile: dest=/etc/mysql/mariadb.conf.d/50-server.cnf regexp=^bind-address line="bind-address = 0.0.0.0"
       notify: restart mysql
 
     - name: create demo database
@@ -174,7 +164,9 @@ ansible-playbook -i hosts -u vagrant loadbalancer.yml
       service: name=mysql state=restarted
 ```
 
-Instala MySQL, lo configura para escuchar en todas las interfaces, crea la base de datos `demo` y el usuario `demo` con permisos completos. El handler reinicia MySQL automáticamente si `lineinfile` detecta un cambio en `bind-address`.
+Instala MySQL/MariaDB (a través de `default-mysql-server`), lo configura para escuchar en todas las interfaces, crea la base de datos `demo` y el usuario `demo` con permisos completos. El handler reinicia MySQL automáticamente si `lineinfile` detecta un cambio en `bind-address`.
+
+**Nota**: En sistemas Debian/Ubuntu modernos, la ruta de configuración es `/etc/mysql/mariadb.conf.d/50-server.cnf` en lugar de `/etc/mysql/my.cnf`.
 
 ### Comando de ejecución
 
@@ -184,7 +176,7 @@ ansible-playbook -i hosts -u vagrant database.yml
 
 ---
 
-## 📜 `webserver.yml` — Sin cambios respecto a 013
+## 📜 `webserver.yml` — Apache2 + WSGI + Flask
 
 ```yaml
 ---
@@ -196,7 +188,7 @@ ansible-playbook -i hosts -u vagrant database.yml
       with_items:
         - apache2
         - libapache2-mod-wsgi-py3
-        - python-pip-whl
+        - python3-pip-whl
         - python3-virtualenv
         - python3-mysqldb
 
@@ -231,6 +223,8 @@ ansible-playbook -i hosts -u vagrant database.yml
     - name: restart apache2
       service: name=apache2 state=restarted
 ```
+
+Instala Apache2 con soporte WSGI, Flask mediante virtualenv, y conectividad a MySQL. Copia la aplicación de demostración y configura el sitio virtual.
 
 ### Comando de ejecución
 
@@ -278,7 +272,8 @@ ansible-playbook -i hosts -u vagrant webserver.yml
       with_items: "{{ groups.loadbalancer }}"
       register: lb_index
 
-    - fail: msg="index failed to return content"
+    - name: fail if index failed to return content
+      fail: msg="index failed to return content"
       when: "'Hello, from sunny' not in item.content"
       with_items: "{{lb_index.results}}"
 
@@ -287,7 +282,8 @@ ansible-playbook -i hosts -u vagrant webserver.yml
       with_items: "{{ groups.loadbalancer }}"
       register: lb_db
 
-    - fail: msg="db failed to return content"
+    - name: fail if db failed to return content 
+      fail: msg="db failed to return content"
       when: "'Database Connected from' not in item.content"
       with_items: "{{lb_db.results}}"
 
@@ -298,7 +294,8 @@ ansible-playbook -i hosts -u vagrant webserver.yml
       with_items: "{{ groups.webserver }}"
       register: app_index
 
-    - fail: msg="index failed to return content"
+    - name: verify backend index response
+      fail: msg="index failed to return content"
       when: "'Hello, from sunny' not in item.content"
       with_items: "{{app_index.results}}"
 
@@ -307,7 +304,8 @@ ansible-playbook -i hosts -u vagrant webserver.yml
       with_items: "{{ groups.webserver }}"
       register: app_db
 
-    - fail: msg="db failed to return content"
+    - name: verify backend db response
+      fail: msg="db failed to return content"
       when: "'Database Connected from' not in item.content"
       with_items: "{{app_db.results}}"
 ```
@@ -470,7 +468,7 @@ ansible-playbook -i hosts -u vagrant playbooks/stack_status.yml
 
 ---
 
-## 📜 `playbooks/stack_restart.yml` — Sin cambios respecto a 013
+## 📜 `playbooks/stack_restart.yml` — Reinicio seguro del stack
 
 ```yaml
 ---
@@ -518,7 +516,40 @@ ansible-playbook -i hosts -u vagrant playbooks/stack_restart.yml
 
 ---
 
+## 🎯 `site.yml` — Orquestación completa del stack
+
+```yaml
+---
+- ansible.builtin.import_playbook: control.yml
+- ansible.builtin.import_playbook: database.yml
+- ansible.builtin.import_playbook: webserver.yml
+- ansible.builtin.import_playbook: loadbalancer.yml
+- ansible.builtin.import_playbook: playbooks/stack_status.yml
+- ansible.builtin.import_playbook: playbooks/stack_restart.yml
+- ansible.builtin.import_playbook: playbooks/stack_status.yml
+```
+
+Archivo maestro que orquesta el despliegue completo del stack de forma automatizada:
+
+1. Prepara el nodo de control
+2. Instala la base de datos
+3. Instala el servidor web
+4. Instala el balanceador de carga
+5. Verifica que el stack funciona correctamente
+6. Reinicia el stack en orden seguro
+7. Verifica nuevamente que el stack funciona correctamente
+
+### Comando de ejecución
+
+```bash
+ansible-playbook -i hosts -u vagrant site.yml
+```
+
+Este comando ejecuta el flujo completo de despliegue y verificación en una sola llamada.
+
 ## 🔄 Flujo completo de despliegue del stack
+
+### Opción 1: Despliegue paso a paso
 
 ```bash
 # 1. Preparar el nodo de control
@@ -532,6 +563,13 @@ ansible-playbook -i hosts -u vagrant webserver.yml
 
 # 4. Desplegar el balanceador de carga
 ansible-playbook -i hosts -u vagrant loadbalancer.yml
+```
+
+### Opción 2: Despliegue automático completo
+
+```bash
+# Despliegue + verificación + reinicio + verificación en una sola llamada
+ansible-playbook -i hosts -u vagrant site.yml
 ```
 
 ### Comandos de operación del stack (una vez desplegado)
@@ -564,13 +602,13 @@ ansible-playbook -i hosts -u vagrant playbooks/hostname.yml
 
 ## 💡 Conceptos clave aprendidos en este ejemplo
 
-- **Módulo `uri`**: Realiza peticiones HTTP desde el nodo Ansible hacia una URL. Con `return_content=yes` captura el cuerpo de la respuesta para inspeccionarlo. Requiere `python-httplib2` instalado en el nodo que ejecuta la tarea.
+- **Módulo `uri`**: Realiza peticiones HTTP desde el nodo Ansible hacia una URL. Con `return_content=yes` captura el cuerpo de la respuesta para inspeccionarlo. El módulo utiliza la librería HTTP estándar de Python sin requerir dependencias adicionales en versiones modernas.
 - **Módulo `fail`**: Fuerza el fallo explícito del playbook con un mensaje personalizado cuando se cumple la condición `when`. Es la herramienta estándar para implementar **aserciones** en Ansible.
 - **`register`**: Guarda el resultado de una tarea en una variable para usarla en tareas posteriores. En combinación con `uri`, permite inspeccionar el contenido de las respuestas HTTP.
 - **`when` con `not in`**: Condición Jinja2 que evalúa si una cadena de texto **no está contenida** en otra. Patrón estándar para verificar contenido de respuestas HTTP.
 - **`groups.loadbalancer` / `groups.webserver`**: Variables mágicas de Ansible que exponen las listas de hosts de cada grupo del inventario, usadas aquí con `with_items` para iterar sobre las IPs de cada capa del stack.
 - **Pruebas en dos capas**: Verificar tanto `control → loadbalancer` como `loadbalancer → webserver` permite **aislar problemas**: si la prueba desde control falla pero la del loadbalancer pasa, el problema está en Nginx; si ambas fallan, el problema está en Apache o MySQL.
-- **`python-httplib2`**: Dependencia necesaria en cualquier nodo que ejecute el módulo `uri`. Se instala tanto en `control` como en `loadbalancer` porque ambos actúan como origen de peticiones HTTP en `stack_status.yml`.
+- **Verificación multi-nivel**: El playbook `stack_status.yml` implementa verificaciones en cinco fases (procesos, puertos, HTTP end-to-end, HTTP directo) para garantizar que cada componente del stack funciona correctamente de forma aislada y integrada.
 
 ---
 
