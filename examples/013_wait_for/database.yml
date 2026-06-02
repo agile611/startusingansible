@@ -6,15 +6,13 @@
       apt: name={{item}} state=present update_cache=yes
       with_items:
         - python3-mysqldb
-
-    - name: install mysql-server
-      apt: name=mysql-server state=present update_cache=yes
+        - default-mysql-server
 
     - name: ensure mysql started
       service: name=mysql state=started enabled=yes
 
     - name: ensure mysql listening on all ports
-      lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address line="bind-address = 0.0.0.0"
+      lineinfile: dest=/etc/mysql/mariadb.conf.d/50-server.cnf regexp=^bind-address line="bind-address = 0.0.0.0"
       notify: restart mysql
 
     - name: create demo database
