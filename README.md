@@ -62,7 +62,6 @@ docker network prune -f
 **3. Construye y arranca los contenedores:**
 
 ```bash
-docker compose build
 docker compose up -d
 ```
 
