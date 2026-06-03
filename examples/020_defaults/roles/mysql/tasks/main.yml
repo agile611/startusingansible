@@ -5,10 +5,9 @@
     - python3-mysqldb
 
 - name: install mysql-server
-  apt: name=mysql-server state=present update_cache=yes
+  apt: name=default-mysql-server state=present update_cache=yes
 
 - name: ensure mysql listening on all ports
-  #lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address line="bind-address = {{ ansible_eth0.ipv6[0].address }}"
   lineinfile: dest=/etc/mysql/mariadb.conf.d/50-server.cnf regexp=^bind-address line="bind-address = {{ db_server }}"
   notify: restart mysql
 
