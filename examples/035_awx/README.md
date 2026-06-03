@@ -41,10 +41,6 @@ con control de errores, timeouts y medición de tiempo de ejecución.
 │                puerto 32000 → forwarded → host:32000     │
 └──────────────────────────────────────────────────────────┘
 ```
-
-> **Nota:** El Vagrantfile usa `bento/debian-13` y `bento/ubuntu-26.04`,
-> que **no existen todavía** como boxes estables. 
-
 ---
 
 ## 📄 Fichero: `Vagrantfile`
