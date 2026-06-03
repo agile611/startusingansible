@@ -75,4 +75,4 @@ $RECYCLE.BIN/
 *.lnk
 
 
-# End of https://www.gitignore.io/api/macos,windows,vagrant,ansible,visualstudiocode
+# End of https://www.gitignore.io/api/macos,windows,vagrant,ansible,visualstudiocode.vault_pass
