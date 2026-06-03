@@ -12,17 +12,17 @@
   with_dict: "{{ sites }}"
   notify: restart nginx
 
-- name: get active sites
+- name: get enabled sites
   shell: ls /etc/nginx/sites-enabled
   register: result
 
-- name: de-activate sites
+- name: de-activate enabled sites
   file: path=/etc/nginx/sites-enabled/{{ item }} state=absent
   with_items: "{{ result.stdout_lines }}"
   when: item not in sites
   notify: restart nginx
 
-- name: activate nginx sites
+- name: enable nginx sites
   file: src=/etc/nginx/sites-available/{{ item.key }} dest=/etc/nginx/sites-enabled/{{ item.key }} state=link
   with_dict: "{{ sites }}"
   notify: restart nginx
