@@ -1,22 +1,14 @@
 ---
-- name: update apt cache once day
-  apt: update_cache=yes cache_valid_time=86400
-
 - name: install tools
-  apt: name={{item}} state=present
+  apt: name={{item}} state=present update_cache=yes
   with_items:
     - python3-mysqldb
 
 - name: install mysql-server
-  apt: name=mysql-server state=present
-
-- name: chmod 777 /etc/mysql/my.cnf
-  command: chmod 777 /etc/mysql/my.cnf
-  notify: restart mysql
+  apt: name=default-mysql-server state=present update_cache=yes
 
 - name: ensure mysql listening on all ports
-  lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address
-              line="bind-address = {{ ansible_eth0.ipv4.address }}"
+  lineinfile: dest=/etc/mysql/mariadb.conf.d/50-server.cnf regexp=^bind-address line="bind-address = {{ db_server }}"
   notify: restart mysql
 
 - name: ensure mysql started
@@ -28,3 +20,6 @@
 - name: create user
   mysql_user: name={{ db_user_name }} password={{ db_user_pass }} priv={{ db_name }}.*:ALL
               host='{{ db_user_host }}' state=present
+
+- name: restart mysql
+  service: name=mysql state=restarted
