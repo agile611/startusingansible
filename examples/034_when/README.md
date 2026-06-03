@@ -1,19 +1,19 @@
-# 034 — Condicionals `when` en Ansible
+# 034 — Condicionales `when` en Ansible
 
-## 📋 Descripció General
+## 📋 Descripción General
 
-Aquest exemple demostra l'ús de la directiva `when` en Ansible,
-que permet executar tasques de forma **condicional** segons el grup
-al qual pertany cada host, les seves variables o els fets (`facts`)
-recollits automàticament per Ansible.
+Este ejemplo demuestra el uso de la directiva `when` en Ansible,
+que permite ejecutar tareas de forma **condicional** según el grupo
+al que pertenece cada host, sus variables o los hechos (`facts`)
+recogidos automáticamente por Ansible.
 
-L'ús de `when` és fonamental per escriure playbooks **reutilitzables**
-que s'executen sobre infraestructures heterogènies — com en aquest cas,
-on tenim tres tipus de servidors amb rols completament diferents.
+El uso de `when` es fundamental para escribir playbooks **reutilizables**
+que se ejecutan sobre infraestructuras heterogéneas — como en este caso,
+donde tenemos tres tipos de servidores con roles completamente diferentes.
 
 ---
 
-## 🗂️ Estructura de l'Inventari (`hosts`)
+## 🗂️ Estructura del Inventario (`hosts`)
 
 ```ini
 [all:vars]
@@ -32,72 +32,72 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 192.168.11.40
 ```
 
-### Explicació de l'inventari
+### Explicación del inventario
 
-| **Paràmetre** | **Valor** | **Funció** |
+| **Parámetro** | **Valor** | **Función** |
 |---|---|---|
-| `ansible_python_interpreter` | `/usr/bin/python3` | Força l'ús de Python 3 als nodes remots |
-| `ansible_user` | `vagrant` | Usuari SSH per connectar-se als hosts |
-| `ansible_ssh_private_key_file` | `/home/vagrant/.ssh/id_rsa` | Clau privada per a l'autenticació SSH sense contrasenya |
-| `ansible_ssh_common_args` | `-o StrictHostKeyChecking=no` | Desactiva la verificació de la clau del host (útil en entorns de laboratori Vagrant) |
+| `ansible_python_interpreter` | `/usr/bin/python3` | Fuerza el uso de Python 3 en los nodos remotos |
+| `ansible_user` | `vagrant` | Usuario SSH para conectarse a los hosts |
+| `ansible_ssh_private_key_file` | `/home/vagrant/.ssh/id_rsa` | Clave privada para autenticación SSH sin contraseña |
+| `ansible_ssh_common_args` | `-o StrictHostKeyChecking=no` | Desactiva la verificación de la clave del host (útil en entornos de laboratorio Vagrant) |
 
-Els tres grups defineixen la **topologia de la infraestructura**:
+Los tres grupos definen la **topología de la infraestructura**:
 
-- **`[database]`** → `192.168.11.20` — Servidor de base de dades
-- **`[loadbalancer]`** → `192.168.11.30` — Balancejador de càrrega (ex: HAProxy / Nginx)
-- **`[webserver]`** → `192.168.11.40` — Servidor web (ex: Apache / Nginx)
+- **`[database]`** → `192.168.11.20` — Servidor de base de datos
+- **`[loadbalancer]`** → `192.168.11.30` — Balanceador de carga (ej: HAProxy / Nginx)
+- **`[webserver]`** → `192.168.11.40` — Servidor web (ej: Apache / Nginx)
 
 ---
 
-## 🎭 Què fa el Playbook (`playbook.yml`)
+## 🎭 Qué hace el Playbook (`playbook.yml`)
 
-El playbook s'executa sobre **tots els hosts** (`hosts: all`) però
-utilitza la directiva `when` per aplicar tasques específiques
-**només als hosts que pertanyen a un grup determinat**.
+El playbook se ejecuta sobre **todos los hosts** (`hosts: all`) pero
+utiliza la directiva `when` para aplicar tareas específicas
+**solo a los hosts que pertenecen a un grupo determinado**.
 
-### Lògica condicional amb `when`
+### Lógica condicional con `when`
 
 ```yaml
-# Exemple de patró típic d'un playbook 034_when
+# Ejemplo de patrón típico de un playbook 034_when
 
-- name: Exemple de condicionals when
+- name: Ejemplo de condicionales when
   hosts: all
   become: true
 
   tasks:
 
-    - name: Instal·lar MySQL (només al servidor de base de dades)
+    - name: Instalar MySQL (solo en el servidor de base de datos)
       apt:
         name: mysql-server
         state: present
       when: inventory_hostname in groups['database']
 
-    - name: Instal·lar HAProxy (només al balancejador)
+    - name: Instalar HAProxy (solo en el balanceador)
       apt:
         name: haproxy
         state: present
       when: inventory_hostname in groups['loadbalancer']
 
-    - name: Instal·lar Apache (només als servidors web)
+    - name: Instalar Apache (solo en los servidores web)
       apt:
         name: apache2
         state: present
       when: inventory_hostname in groups['webserver']
 
-    - name: Tasca comuna per a tots els servidors
+    - name: Tarea común para todos los servidores
       debug:
-        msg: "Aquest servidor és: {{ inventory_hostname }}"
+        msg: "Este servidor es: {{ inventory_hostname }}"
 ```
 
-### Com funciona `when` pas a pas
+### Cómo funciona `when` paso a paso
 
-1. Ansible es connecta als **3 hosts** simultàniament via SSH
-2. Per a cada host, avalua la condició `when` de cada tasca
-3. Si la condició és **`true`** → executa la tasca
-4. Si la condició és **`false`** → marca la tasca com a `skipping` i continua
-5. El resultat final és que **cada host rep només les tasques que li corresponen**
+1. Ansible se conecta a los **3 hosts** simultáneamente vía SSH
+2. Para cada host, evalúa la condición `when` de cada tarea
+3. Si la condición es **`true`** → ejecuta la tarea
+4. Si la condición es **`false`** → marca la tarea como `skipping` y continúa
+5. El resultado final es que **cada host recibe solo las tareas que le corresponden**
 
-### Flux d'execució visual
+### Flujo de ejecución visual
 
 ```
                     ┌─────────────────────────────────────┐
@@ -120,81 +120,81 @@ utilitza la directiva `when` per aplicar tasques específiques
 
 ---
 
-## ▶️ Comanda d'Execució
+## ▶️ Comando de Ejecución
 
 ```bash
 ansible-playbook -i hosts -u vagrant playbook.yml
 ```
 
-### Desglossat de la comanda
+### Desglose del comando
 
-| **Flag** | **Valor** | **Funció** |
+| **Flag** | **Valor** | **Función** |
 |---|---|---|
-| `-i hosts` | fitxer `hosts` | Especifica l'inventari d'hosts |
-| `-u vagrant` | `vagrant` | Usuari SSH per a la connexió remota |
-| `playbook.yml` | fitxer principal | El playbook a executar |
+| `-i hosts` | fichero `hosts` | Especifica el inventario de hosts |
+| `-u vagrant` | `vagrant` | Usuario SSH para la conexión remota |
+| `playbook.yml` | fichero principal | El playbook a ejecutar |
 
-> **Nota:** L'usuari `-u vagrant` és redundant en aquest cas perquè
-> ja està definit a `[all:vars]` com `ansible_user=vagrant`,
-> però és una bona pràctica especificar-lo explícitament a la comanda.
+> **Nota:** El flag `-u vagrant` es redundante en este caso porque
+> ya está definido en `[all:vars]` como `ansible_user=vagrant`,
+> pero es una buena práctica especificarlo explícitamente en el comando.
 
 ---
 
-## 🔑 Conceptes Clau Apresos
+## 🔑 Conceptos Clave Aprendidos
 
 ### 1. La directiva `when`
-Permet condicionar l'execució d'una tasca. Accepta expressions Python/Jinja2:
+Permite condicionar la ejecución de una tarea. Acepta expresiones Python/Jinja2:
 
 ```yaml
-# Per grup d'inventari
+# Por grupo de inventario
 when: inventory_hostname in groups['webserver']
 
-# Per sistema operatiu (usant facts)
+# Por sistema operativo (usando facts)
 when: ansible_os_family == "Debian"
 
-# Per variable
+# Por variable
 when: my_variable == true
 
-# Condicions múltiples (AND)
+# Condiciones múltiples (AND)
 when:
   - ansible_os_family == "Debian"
   - inventory_hostname in groups['webserver']
 
-# Condicions múltiples (OR)
+# Condiciones múltiples (OR)
 when: ansible_os_family == "Debian" or ansible_os_family == "RedHat"
 ```
 
 ### 2. `inventory_hostname`
-Variable màgica d'Ansible que conté el nom o IP del host
-que s'està processant en aquell moment.
+Variable mágica de Ansible que contiene el nombre o IP del host
+que se está procesando en ese momento.
 
-### 3. `groups['nom_grup']`
-Diccionari d'Ansible que conté tots els hosts d'un grup determinat.
-La combinació `inventory_hostname in groups['grup']` és el patró
-més comú per aplicar tasques per rol de servidor.
+### 3. `groups['nombre_grupo']`
+Diccionario de Ansible que contiene todos los hosts de un grupo determinado.
+La combinación `inventory_hostname in groups['grupo']` es el patrón
+más común para aplicar tareas por rol de servidor.
 
-### 4. Comportament `skipping`
-Quan una condició `when` no es compleix, Ansible **no falla** —
-simplement mostra `skipping` i continua amb la següent tasca.
-Això és el que permet executar un sol playbook sobre tota la infraestructura.
+### 4. Comportamiento `skipping`
+Cuando una condición `when` no se cumple, Ansible **no falla** —
+simplemente muestra `skipping` y continúa con la siguiente tarea.
+Esto es lo que permite ejecutar un solo playbook sobre toda la infraestructura.
 
 ---
 
-## 🏗️ Casos d'Ús Reals
+## 🏗️ Casos de Uso Reales
 
-| **Escenari** | **Condició `when`** |
+| **Escenario** | **Condición `when`** |
 |---|---|
-| Instal·lar paquets per rol | `inventory_hostname in groups['webserver']` |
+| Instalar paquetes por rol | `inventory_hostname in groups['webserver']` |
 | Diferenciar Debian vs RedHat | `ansible_os_family == "Debian"` |
-| Executar només en producció | `env == "production"` |
-| Saltar si ja està configurat | `not config_file.stat.exists` |
-| Condicionar per versió de SO | `ansible_distribution_version >= "20.04"` |
+| Ejecutar solo en producción | `env == "production"` |
+| Saltar si ya está configurado | `not config_file.stat.exists` |
+| Condicionar por versión de SO | `ansible_distribution_version >= "20.04"` |
 
 ---
 
-## 📚 Referències
+## 📚 Referencias
 
 - [Ansible Docs — Conditionals (`when`)](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_conditionals.html)
 - [Ansible Docs — Magic Variables (`inventory_hostname`, `groups`)](https://docs.ansible.com/ansible/latest/reference_appendices/special_variables.html)
 - [Ansible Docs — Inventory basics](https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html)
-- [Repositori original — agile611/startusingansible](https://github.com/agile611/startusingansible)
+- [Repositorio original — agile611/startusingansible](https://github.com/agile611/startusingansible)
