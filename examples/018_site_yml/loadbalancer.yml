@@ -3,26 +3,3 @@
   become: true
   roles:
     - nginx
-    - haproxy
-    - keepalived
-  vars:
-    nginx_http_port: 80
-    nginx_https_port: 443
-    nginx_http2: true
-    nginx_ssl_certificate: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
-    nginx_ssl_certificate_key: "/etc/ssl/private/ssl-cert-snakeoil.key"
-    haproxy_frontend_port: 80
-    haproxy_backend_servers:
-      - { name: "web1", address: "0.0.0.0", port: 80 }
-    keepalived_vrrp_id: 51
-    keepalived_vrrp_priority: 100
-    keepalived_vrrp_auth_pass: "password"
-    keepalived_vrrp_virtual_ip: ""  # Set this to the virtual IP you want to use
-    keepalived_vrrp_state: "MASTER"  # Set to "BACKUP" for the secondary load balancer
-    keepalived_vrrp_interface: "eth0"  # Change to your network interface
-    keepalived_vrrp_virtual_router_id: 51 # Must match the ID used by the other load balancer
-    keepalived_vrrp_unicast_peer: []  # Add IPs of other load balancers if needed
-    keepalived_vrrp_unicast_src_ip: ""  # Set to the source IP for unicast communication
-    keepalived_vrrp_track_script: "check_haproxy"
-    keepalived_vrrp_script_name: "check_haproxy"
-
