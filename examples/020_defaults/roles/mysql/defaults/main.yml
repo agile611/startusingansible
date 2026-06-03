@@ -1,6 +1,5 @@
 ---
-db_name: ansibleapp
-db_user_name: ansibleuser
-db_user_pass: ansiblepass
-db_user_host: localhost
-db_server: 0.0.0.0
+db_name: newapp
+db_user_name: newuser
+db_user_pass: newpass
+db_user_host: %
