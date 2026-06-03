@@ -64,7 +64,7 @@ Vagrant.configure("2") do |config|
 
   # ─── Nodo AWX (Ubuntu) ─────────────────────────────────
   config.vm.define "awx" do |awx|
-    awx.vm.box      = "bento/ubuntu-24.04"      # ← corregido
+    awx.vm.box      = "bento/ubuntu-26.04"
     awx.vm.hostname = "awx"
     awx.vm.network "private_network", ip: "192.168.11.50"
     awx.vm.network "forwarded_port", guest: 32000, host: 32000
