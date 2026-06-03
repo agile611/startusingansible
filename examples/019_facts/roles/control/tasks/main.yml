@@ -1,8 +1,0 @@
----
-- name: get facts
-  debug:
-    var: ansible_facts
-
-- name: print ansible_ssh_host_key_rsa_public
-  debug:
-    var: ansible_facts['ansible_ssh_host_key_rsa_public']
