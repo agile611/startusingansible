@@ -1,5 +1,5 @@
 ---
-db_name: newapp
-db_user_name: newuser
-db_user_pass: newpass
-db_user_host: %
+db_name: "newapp"
+db_user_name: "newuser"
+db_user_pass: "newpass"
+db_user_host: "%"
