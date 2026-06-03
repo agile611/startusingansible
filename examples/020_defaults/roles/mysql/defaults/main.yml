@@ -3,4 +3,4 @@ db_name: ansibleapp
 db_user_name: ansibleuser
 db_user_pass: ansiblepass
 db_user_host: localhost
-db_server: 3.144.5.82
+db_server: 0.0.0.0
