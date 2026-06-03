@@ -1,6 +1,6 @@
 # defaults file for nginx
 ---
 sites:
-  myappguillem:
+  reverseproxy:
     frontend: 80
-    backend: 80
+    backend: 443
