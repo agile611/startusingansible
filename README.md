@@ -101,7 +101,7 @@ docker compose -f build-docker-compose.yml up -d
 
 ---
 
-## 📦 Opción B — Vagrant
+## 📦 Opción B — Vagrant (carpeta vagrantfiles)
 
 ```bash
 # Arranca las 4 VMs (ansible, database, loadbalancer, webserver)

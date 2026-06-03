@@ -10,11 +10,11 @@ Vagrant.configure("2") do |config|
 
   nodes.each do |node|
     config.vm.define node[:name] do |vm|
-      vm.vm.box      = "bento/debian-12"
+      vm.vm.box      = "bento/ubuntu-26.04"
       vm.vm.hostname = node[:name]
       vm.vm.network "private_network", ip: node[:ip]
       vm.vm.synced_folder ".", "/vagrant", type: "rsync"
-      vm.vm.provision :shell, :path => "ansible.sh"
+      vm.vm.provision :shell, :path => "UbuntuAnsible.sh"
       vm.vm.provider "virtualbox" do |vb|
         vb.name   = node[:name]
         vb.memory = node[:memory]
