@@ -4,6 +4,7 @@ db_name: maykadb
 db_user: mayka_user
 db_pass: mayka_pass
 db_user_host: localhost
+db_server: 0.0.0.0
 
 #nginx loadbalancer configuration
 sites:
