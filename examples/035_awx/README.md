@@ -43,8 +43,7 @@ con control de errores, timeouts y medición de tiempo de ejecución.
 ```
 
 > **Nota:** El Vagrantfile usa `bento/debian-13` y `bento/ubuntu-26.04`,
-> que **no existen todavía** como boxes estables. Sustituir por
-> `bento/debian-12` y `bento/ubuntu-24.04` respectivamente.
+> que **no existen todavía** como boxes estables. 
 
 ---
 
