@@ -2,11 +2,6 @@
 - name: update apt cache once day
   apt: update_cache=yes cache_valid_time=86400
 
-- name: install tools
-  apt: name={{item}} state=present
-  with_items:
-    - python-httplib2
-
 - name: install nginx
   apt: name=nginx state=present
 
@@ -15,21 +10,17 @@
   with_dict: "{{ sites }}"
   notify: restart nginx
 
-- name: get active sites
-  shell: ls -l /etc/nginx/sites-enabled
+- name: get enabled sites
+  shell: ls /etc/nginx/sites-enabled
   register: result
 
-- name: de-activate default
-  file: path=/etc/nginx/sites-enabled/default state=absent
-  notify: restart nginx
-
-- name: de-activate sites
+- name: de-activate enabled sites
   file: path=/etc/nginx/sites-enabled/{{ item }} state=absent
-  with_items: active.stdout_lines
+  with_items: "{{ result.stdout_lines }}"
   when: item not in sites
   notify: restart nginx
 
-- name: activate nginx sites
+- name: enable nginx sites
   file: src=/etc/nginx/sites-available/{{ item.key }} dest=/etc/nginx/sites-enabled/{{ item.key }} state=link
   with_dict: "{{ sites }}"
   notify: restart nginx
