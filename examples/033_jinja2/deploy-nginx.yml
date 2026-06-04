@@ -3,6 +3,7 @@
   become: true # Permite ejecutar tareas con privilegios de superusuario
   vars:
     nginx_conf_template: "nginx.conf.j2" # Ruta de la plantilla Jinja2 para la configuración de nginx
+    server_name: "example.com" # Nombre del servidor para la configuración de nginx
   tasks:
     - name: Instalar nginx
       apt:
