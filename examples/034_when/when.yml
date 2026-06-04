@@ -25,7 +25,7 @@
     
     - name: Imprimir la versión de Nginx instalada
       ansible.builtin.debug:
-        msg: "Versión de Nginx instalada: {{ nginx_version.stdout }}"
+        msg: "Versión de Nginx instalada: {{ nginx_version.stderr }}"
       when: ip_address == ['192.168.11.30']
     
     - name: Desinstala nginx
