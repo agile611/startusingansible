@@ -1,11 +1,11 @@
 services:
   ansible:
-    image: guillemhs/ansible-debian
+    image: guillemhs/ansible-debian:latest
     container_name: ansible
     hostname: ansible
     networks:
       ansible-net:
-        ipv4_address: 192.168.11.10
+        ipv4_address: 10.11.12.10
     volumes:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
@@ -26,12 +26,12 @@ services:
       - NET_ADMIN
 
   database:
-    image: guillemhs/ansible-debian
+    image: guillemhs/ansible-debian:latest
     container_name: database
     hostname: database
     networks:
       ansible-net:
-        ipv4_address: 192.168.11.20
+        ipv4_address: 10.11.12.20
     ports:
       - "8081:80"
       - "3306:3306"
@@ -48,12 +48,12 @@ services:
       - NET_ADMIN
 
   loadbalancer:
-    image: guillemhs/ansible-debian
+    image: guillemhs/ansible-debian:latest
     container_name: loadbalancer
     hostname: loadbalancer
     networks:
       ansible-net:
-        ipv4_address: 192.168.11.30
+        ipv4_address: 10.11.12.30
     ports:
       - "8080:80"
       - "33061:3306"
@@ -70,12 +70,12 @@ services:
       - NET_ADMIN
 
   webserver:
-    image: guillemhs/ansible-debian
+    image: guillemhs/ansible-debian:latest
     container_name: webserver
     hostname: webserver
     networks:
       ansible-net:
-        ipv4_address: 192.168.11.40
+        ipv4_address: 10.11.12.40
     ports:
       - "80:80"
       - "33062:3306"
@@ -96,5 +96,5 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 192.168.11.0/24
-          gateway: 192.168.11.1
+        - subnet: 10.11.12.0/24
+          gateway: 10.11.12.1
