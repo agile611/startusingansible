@@ -23,6 +23,11 @@
       register: nginx_version
       when: ip_address == ['192.168.11.30']
     
+    - name: Imprimir la versión de Nginx instalada
+      debug:
+        msg: "Nginx versión: {{ nginx_version.stdout }}"
+      when: ip_address == ['192.168.11.30']
+    
     - name: Desinstala nginx
       apt:
         name: nginx
