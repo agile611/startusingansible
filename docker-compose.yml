@@ -9,7 +9,7 @@ services:
     volumes:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -17,7 +17,7 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroup: host
+    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -35,7 +35,7 @@ services:
       - "3306:3306"
       - "2220:22"
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -43,7 +43,7 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroup: host
+    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -61,7 +61,7 @@ services:
       - "8080:80"
       - "2221:22"
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -69,7 +69,7 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroup: host
+    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -87,7 +87,7 @@ services:
       - "80:80"
       - "2222:22"
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -95,7 +95,7 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroup: host
+    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
