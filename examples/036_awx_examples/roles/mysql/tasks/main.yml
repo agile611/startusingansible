@@ -2,7 +2,7 @@
 - name: Installa el paquet de Python per a MySQL
   pip:
     name: PyMySQL
-    
+
 - name: install tools
   apt: name={{item}} state=present update_cache=yes
   with_items:
@@ -20,8 +20,8 @@
   service: name=mysql state=started enabled=yes
 
 - name: create database
-  mysql_db: name={{ db_name }} state=present
+  ansible.mysql.mysql_db: name={{ db_name }} state=present
 
 - name: create user
-  mysql_user: name={{ db_user_name }} password={{ db_user_pass }} priv={{ db_name }}.*:ALL
+  ansible.mysql.mysql_user: name={{ db_user_name }} password={{ db_user_pass }} priv={{ db_name }}.*:ALL
               host='{{ db_user_host }}' state=present
