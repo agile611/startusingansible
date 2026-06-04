@@ -15,9 +15,7 @@
         msg: "La dirección IP de eth0 es {{ ip_address }}"
 
     - name: Instalar Nginx si la IP es 192.168.11.30
-      apt:
-        name: nginx
-        state: present
+      apt: name=nginx state=present update_cache=yes
       when: ip_address == ['192.168.11.30']
 
     - name: Verificar la instalación de Nginx
