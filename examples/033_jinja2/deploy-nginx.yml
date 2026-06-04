@@ -4,6 +4,7 @@
   vars:
     nginx_conf_template: "nginx.conf.j2" # Ruta de la plantilla Jinja2 para la configuración de nginx
     server_name: "example.com" # Nombre del servidor para la configuración de nginx
+    enable_ssl: true # Variable para habilitar o deshabilitar SSL
   tasks:
     - name: Instalar nginx
       apt: name=nginx state=present update_cache=yes
