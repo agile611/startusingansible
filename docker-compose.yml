@@ -9,7 +9,6 @@ services:
     volumes:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
-      - /home/vagrant/sync:/home/vagrant/sync
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
@@ -33,7 +32,6 @@ services:
       ansible-net:
         ipv4_address: 10.11.12.20
     ports:
-      - "8081:80"
       - "3306:3306"
       - "2220:22"
     volumes:
@@ -42,8 +40,13 @@ services:
       - /run
       - /run/lock
       - /tmp
+    stdin_open: true
+    tty: true
     privileged: true
     cgroup: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     cap_add:
       - NET_ADMIN
 
@@ -56,7 +59,6 @@ services:
         ipv4_address: 10.11.12.30
     ports:
       - "8080:80"
-      - "33061:3306"
       - "2221:22"
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -64,8 +66,13 @@ services:
       - /run
       - /run/lock
       - /tmp
+    stdin_open: true
+    tty: true
     privileged: true
     cgroup: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     cap_add:
       - NET_ADMIN
 
@@ -78,7 +85,6 @@ services:
         ipv4_address: 10.11.12.40
     ports:
       - "80:80"
-      - "33062:3306"
       - "2222:22"
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
@@ -86,8 +92,13 @@ services:
       - /run
       - /run/lock
       - /tmp
+    stdin_open: true
+    tty: true
     privileged: true
     cgroup: host
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     cap_add:
       - NET_ADMIN
 

@@ -1,3 +1,4 @@
+```
 [![Agile611](https://www.agile611.com/wp-content/uploads/2020/09/cropped-logo-header.png)](http://www.agile611.com/)
 
 # Agile611 — Ansible Training
@@ -28,18 +29,37 @@ cd startusingansible
 
 ```
 ┌─────────────────────────────────────────────────┐
-│              red: 192.168.11.0/24               │
+│              red: 10.11.12.0/24                 │
 │                                                 │
-│  ansible       192.168.11.10  (nodo control)    │
-│  database      192.168.11.20  (MySQL/MariaDB)   │
-│  loadbalancer  192.168.11.30  (Nginx LB)        │
-│  webserver     192.168.11.40  (Apache)          │
+│  ansible       10.11.12.10  (nodo control)      │
+│  database      10.11.12.20  (MySQL/MariaDB)     │
+│  loadbalancer  10.11.12.30  (Nginx LB)          │
+│  webserver     10.11.12.40  (Apache)            │
 └─────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🐳 Opción A — Docker
+
+### 🔨 Construir y publicar la imagen (desde cero)
+
+Si necesitas reconstruir la imagen base y publicarla en Docker Hub:
+
+```bash
+# Construir la imagen sin caché
+docker build --no-cache -t guillemhs/ansible-node-systemd .
+
+# Etiquetar como latest
+docker tag guillemhs/ansible-node-systemd guillemhs/ansible-node-systemd:latest
+
+# Publicar en Docker Hub
+docker push guillemhs/ansible-node-systemd:latest
+```
+
+> Necesitas tener sesión iniciada en Docker Hub (`docker login`) antes de hacer el push.
+
+---
 
 ### Arranque rápido
 
@@ -54,7 +74,29 @@ docker network prune -f
 # 3. Arranca los contenedores
 docker compose up -d
 
-# 4. Verifica el estado
+# 4. Espera a que sshd esté listo
+sleep 3
+
+# 5. Copia la clave privada al nodo de control
+docker exec ansible bash -c "mkdir -p /home/vagrant/.ssh && chmod 700 /home/vagrant/.ssh"
+docker exec ansible bash -c "cp /home/vagrant/.ssh/host_keys/id_rsa /home/vagrant/.ssh/id_rsa && chmod 600 /home/vagrant/.ssh/id_rsa"
+docker exec ansible bash -c "cp /home/vagrant/.ssh/host_keys/id_rsa.pub /home/vagrant/.ssh/id_rsa.pub"
+docker exec ansible bash -c "chown -R vagrant:vagrant /home/vagrant/.ssh"
+
+# 6. Inyecta la clave pública en los nodos gestionados
+PUB_KEY=$(cat ssh/id_rsa.pub)
+
+for container in database loadbalancer webserver; do
+  docker exec "$container" bash -c "
+    mkdir -p /home/vagrant/.ssh &&
+    chmod 700 /home/vagrant/.ssh &&
+    echo '$PUB_KEY' >> /home/vagrant/.ssh/authorized_keys &&
+    chmod 600 /home/vagrant/.ssh/authorized_keys &&
+    chown -R vagrant:vagrant /home/vagrant/.ssh
+  "
+done
+
+# 7. Verifica el estado
 docker compose ps
 ```
 
@@ -84,14 +126,12 @@ docker exec -it ansible bash
 
 Para laboratorios más complejos o desarrollo local intensivo,
 usa `build-docker-compose.yml` en lugar del `docker-compose.yml` estándar.
+Este fichero construye la imagen localmente en vez de descargarla del registro.
 
 | Característica | `docker-compose.yml` | `build-docker-compose.yml` |
 |---|---|---|
+| Imagen | Descargada del registro | ✅ Construida localmente |
 | Volúmenes compartidos | Mínimos | ✅ Host + workspace sync |
-| tmpfs (RAM disk) | ❌ | ✅ `/run`, `/run/lock`, `/tmp` |
-| Capabilities de red | ❌ | ✅ `NET_ADMIN` |
-| DNS personalizado | ❌ | ✅ `8.8.8.8` |
-| Modo privilegiado | ❌ | ✅ |
 | **Ideal para** | Pruebas rápidas | Desarrollo y laboratorios |
 
 ```bash
@@ -110,9 +150,9 @@ vagrant ssh ansible
 
 # Genera clave SSH y cópiala a las VMs
 ssh-keygen
-ssh-copy-id vagrant@192.168.11.20
-ssh-copy-id vagrant@192.168.11.30
-ssh-copy-id vagrant@192.168.11.40
+ssh-copy-id vagrant@10.11.12.20
+ssh-copy-id vagrant@10.11.12.30
+ssh-copy-id vagrant@10.11.12.40
 ```
 
 > Si se solicita contraseña: usuario `vagrant`, contraseña `vagrant`.
@@ -140,13 +180,13 @@ ansible_ssh_private_key_file=/home/vagrant/.ssh/id_rsa
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 [database]
-192.168.11.20
+10.11.12.20
 
 [loadbalancer]
-192.168.11.30
+10.11.12.30
 
 [webserver]
-192.168.11.40
+10.11.12.40
 ```
 
 ### Ping a todos los nodos
@@ -158,9 +198,9 @@ ansible -i hosts -u vagrant -m ping all
 Respuesta esperada:
 
 ```
-192.168.11.20 | SUCCESS => { "ping": "pong" }
-192.168.11.30 | SUCCESS => { "ping": "pong" }
-192.168.11.40 | SUCCESS => { "ping": "pong" }
+10.11.12.20 | SUCCESS => { "ping": "pong" }
+10.11.12.30 | SUCCESS => { "ping": "pong" }
+10.11.12.40 | SUCCESS => { "ping": "pong" }
 ```
 
 ---
@@ -227,7 +267,7 @@ ansible-playbook -i hosts -u vagrant playbook.yml
 
 ### Docker: "No route to host"
 ```bash
-ip route | grep 192.168.11
+ip route | grep 10.11.12
 # Si aparece virbr* con la misma subred:
 sudo virsh net-destroy <nombre>
 sudo virsh net-undefine <nombre>
@@ -265,3 +305,4 @@ README escrito por [Guillem Hernández Sola](https://www.linkedin.com/in/guillem
 **Contacto:**
 - 🌐 [agile611.com](http://www.agile611.com/)
 - 📍 Carrer Laureà Miró 309, 08950 Esplugues de Llobregat (Barcelona)
+```
