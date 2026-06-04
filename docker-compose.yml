@@ -9,7 +9,6 @@ services:
     volumes:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -34,8 +33,6 @@ services:
     ports:
       - "3306:3306"
       - "2220:22"
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -49,6 +46,9 @@ services:
       - 8.8.4.4
     cap_add:
       - NET_ADMIN
+    networks:
+      ansible-net:
+        ipv4_address: 10.11.12.20
 
   loadbalancer:
     image: guillemhs/ansible-node-systemd:latest
@@ -60,8 +60,6 @@ services:
     ports:
       - "8080:80"
       - "2221:22"
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
@@ -86,8 +84,6 @@ services:
     ports:
       - "80:80"
       - "2222:22"
-    volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
       - /run/lock
