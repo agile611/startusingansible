@@ -8,7 +8,7 @@ ENV container=docker \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-# Install necessary packages + generate locale
+# Install necessary packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-server \
     vim \
@@ -17,10 +17,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Generate locale and write config directly (update-locale fails in Docker build context)
+# Generate locale — write /etc/default/locale directly, never use update-locale in Docker
 RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
     && locale-gen \
-    && echo "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8" > /etc/default/locale
+    && printf 'LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8\n' > /etc/default/locale
 
 # Create the vagrant user with correct home ownership
 RUN useradd -m -s /bin/bash vagrant && \
@@ -37,10 +37,8 @@ RUN mkdir -p /var/run/sshd && \
 # Enable SSH service
 RUN systemctl enable ssh
 
-# Expose SSH port
 EXPOSE 22
 
-# Start systemd
 VOLUME ["/sys/fs/cgroup"]
 
 ENTRYPOINT ["/lib/systemd/systemd"]
