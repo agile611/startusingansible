@@ -1,4 +1,0 @@
----
-collections:
-  - name: ansible.mysql
-    version: 5.0.2  # Optional: Specify your required version
