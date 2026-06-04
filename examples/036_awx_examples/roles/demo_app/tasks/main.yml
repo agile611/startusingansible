@@ -5,6 +5,7 @@
     - python3-pip-whl
     - python3-virtualenv
     - python3-mysqldb
+    - python3-packaging
 
 - name: copy demo app source
   copy: src=demo/app/ dest=/var/www/demo mode=0755
