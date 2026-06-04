@@ -1,9 +1,9 @@
 - name: Instala Nginx cuando la maquina tenga la ip 192.168.11.30
   hosts: all
-  become: yes
+  become: true
   tasks:
     - name: Obtener la dirección IP de la interfaz eth1
-      command: ip addr show eth1
+      command: ip addr show eth0
       register: ip_output
 
     - name: Extraer la dirección IP de la salida del comando
@@ -12,7 +12,7 @@
 
     - name: Imprimir la dirección IP obtenida
       debug:
-        msg: "La dirección IP de eth1 es {{ ip_address }}"
+        msg: "La dirección IP de eth0 es {{ ip_address }}"
 
     - name: Instalar Nginx si la IP es 192.168.11.30
       apt:
