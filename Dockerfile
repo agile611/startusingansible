@@ -3,20 +3,27 @@ FROM jrei/systemd-debian:latest
 LABEL maintainer='guillem@agile611.com'
 
 ENV container=docker \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
 # Install necessary packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-server \
     vim \
     ansible \
+    locales \
+    && locale-gen en_US.UTF-8 \
+    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Create the vagrant user
+# Create the vagrant user with correct home ownership
 RUN useradd -m -s /bin/bash vagrant && \
     echo "vagrant:vagrant" | chpasswd && \
-    echo "vagrant ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    echo "vagrant ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    chown -R vagrant:vagrant /home/vagrant
 
 # Configure SSH
 RUN mkdir -p /var/run/sshd && \
