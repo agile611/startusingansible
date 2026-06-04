@@ -1,8 +1,4 @@
 ---
-- name: Installa el paquet de Python per a MySQL
-  pip:
-    name: PyMySQL
-
 - name: install tools
   apt: name={{item}} state=present update_cache=yes
   with_items:
