@@ -24,8 +24,8 @@
       when: ip_address == ['192.168.11.30']
     
     - name: Imprimir la versión de Nginx instalada
-      debug:
-        msg: "Nginx versión: {{ nginx_version.output }}"
+      ansible.builtin.debug:
+        msg: "Versión de Nginx instalada: {{ nginx_version.stdout }}"
       when: ip_address == ['192.168.11.30']
     
     - name: Desinstala nginx
