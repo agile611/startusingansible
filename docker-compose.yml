@@ -16,7 +16,6 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -40,15 +39,11 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
     cap_add:
       - NET_ADMIN
-    networks:
-      ansible-net:
-        ipv4_address: 10.11.12.20
 
   loadbalancer:
     image: guillemhs/ansible-node-systemd:latest
@@ -67,7 +62,6 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
@@ -91,7 +85,6 @@ services:
     stdin_open: true
     tty: true
     privileged: true
-    cgroupns: host
     dns:
       - 8.8.8.8
       - 8.8.4.4
