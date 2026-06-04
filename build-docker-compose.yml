@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   ansible:
     build: .
@@ -9,7 +11,6 @@ services:
     volumes:
       - ./ssh:/home/vagrant/.ssh/host_keys
       - .:/home/vagrant/workspace
-      - /home/vagrant/sync:/home/vagrant/sync
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     tmpfs:
       - /run
@@ -25,8 +26,9 @@ services:
     cap_add:
       - NET_ADMIN
 
+  # Other services can remain as is or be adjusted similarly
   database:
-    build: .
+    image: jrei/systemd-debian:latest
     container_name: database
     hostname: database
     networks:
@@ -47,8 +49,9 @@ services:
     cap_add:
       - NET_ADMIN
 
+  # Load balancer and web server configurations remain unchanged
   loadbalancer:
-    build: .
+    image: jrei/systemd-debian:latest
     container_name: loadbalancer
     hostname: loadbalancer
     networks:
@@ -70,7 +73,7 @@ services:
       - NET_ADMIN
 
   webserver:
-    build: .
+    image: jrei/systemd-debian:latest
     container_name: webserver
     hostname: webserver
     networks:
