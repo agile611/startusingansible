@@ -1,6 +1,6 @@
 services:
   ansible:
-    image: guillemhs/ansible-debian:latest
+    image: guillemhs/ansible-node-systemd:latest
     container_name: ansible
     hostname: ansible
     networks:
@@ -26,7 +26,7 @@ services:
       - NET_ADMIN
 
   database:
-    image: guillemhs/ansible-debian:latest
+    image: guillemhs/ansible-node-systemd:latest
     container_name: database
     hostname: database
     networks:
@@ -48,7 +48,7 @@ services:
       - NET_ADMIN
 
   loadbalancer:
-    image: guillemhs/ansible-debian:latest
+    image: guillemhs/ansible-node-systemd:latest
     container_name: loadbalancer
     hostname: loadbalancer
     networks:
@@ -70,7 +70,7 @@ services:
       - NET_ADMIN
 
   webserver:
-    image: guillemhs/ansible-debian:latest
+    image: guillemhs/ansible-node-systemd:latest
     container_name: webserver
     hostname: webserver
     networks:

@@ -8,16 +8,19 @@ ENV container=docker \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-# Install necessary packages
+# Install necessary packages + generate locale
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-server \
     vim \
     ansible \
     locales \
-    && locale-gen en_US.UTF-8 \
-    && update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Generate locale and write config directly (update-locale fails in Docker build context)
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
+    && locale-gen \
+    && echo "LANG=en_US.UTF-8\nLANGUAGE=en_US:en\nLC_ALL=en_US.UTF-8" > /etc/default/locale
 
 # Create the vagrant user with correct home ownership
 RUN useradd -m -s /bin/bash vagrant && \
