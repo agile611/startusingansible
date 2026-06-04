@@ -620,7 +620,7 @@ AWX → Execution Environments → Add
 
 ```
                     ┌─────────────────┐
-                    │  Provision Infra │  (nodo raíz)
+                    │  Provision Infra│  (nodo raíz)
                     └────────┬────────┘
                     success  │  failure
               ┌──────────────┼──────────────┐
