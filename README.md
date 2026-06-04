@@ -1,4 +1,3 @@
-```
 [![Agile611](https://www.agile611.com/wp-content/uploads/2020/09/cropped-logo-header.png)](http://www.agile611.com/)
 
 # Agile611 — Ansible Training
@@ -305,4 +304,3 @@ README escrito por [Guillem Hernández Sola](https://www.linkedin.com/in/guillem
 **Contacto:**
 - 🌐 [agile611.com](http://www.agile611.com/)
 - 📍 Carrer Laureà Miró 309, 08950 Esplugues de Llobregat (Barcelona)
-```
