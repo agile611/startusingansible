@@ -25,7 +25,7 @@
     
     - name: Imprimir la versión de Nginx instalada
       debug:
-        msg: "Nginx versión: {{ nginx_version.stdout }}"
+        msg: "Nginx versión: {{ nginx_version.output }}"
       when: ip_address == ['192.168.11.30']
     
     - name: Desinstala nginx
