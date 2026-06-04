@@ -6,9 +6,7 @@
     server_name: "example.com" # Nombre del servidor para la configuración de nginx
   tasks:
     - name: Instalar nginx
-      apt:
-        name: nginx # Paquete de nginx
-        state: present # Asegura que nginx está instalado
+      apt: name=nginx state=present update_cache=yes
     
     - name: Asegurar que el servicio nginx está habilitado y en ejecución
       service:
