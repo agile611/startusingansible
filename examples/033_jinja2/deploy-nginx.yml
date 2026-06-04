@@ -3,10 +3,17 @@
   become: true # Permite ejecutar tareas con privilegios de superusuario
   vars:
     nginx_conf_template: "nginx.conf.j2" # Ruta de la plantilla Jinja2 para la configuración de nginx
-    server_name: "example.com" # Nombre del servidor para la configuración de nginx
     enable_ssl: true # Variable para habilitar o deshabilitar SSL
     document_root: "/var/www/html" # Ruta del directorio raíz para el sitio web
   tasks:
+    - name: Get hostname
+      command: hostname
+      register: hostname_result
+
+    - name: Set server_name variable
+      set_fact:
+        server_name: "{{ hostname_result.stdout }}" # Establece el nombre del servidor basado en el resultado del comando hostname
+
     - name: Instalar nginx
       apt: name=nginx state=present update_cache=yes
     
