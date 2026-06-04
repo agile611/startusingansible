@@ -76,16 +76,46 @@ docker compose up -d
 # 4. Espera a que sshd esté listo
 sleep 3
 
-# 5. Copia la clave privada al nodo de control
-docker exec ansible bash -c "mkdir -p /home/vagrant/.ssh && chmod 700 /home/vagrant/.ssh"
-docker exec ansible bash -c "cp /home/vagrant/.ssh/host_keys/id_rsa /home/vagrant/.ssh/id_rsa && chmod 600 /home/vagrant/.ssh/id_rsa"
-docker exec ansible bash -c "cp /home/vagrant/.ssh/host_keys/id_rsa.pub /home/vagrant/.ssh/id_rsa.pub"
-docker exec ansible bash -c "chown -R vagrant:vagrant /home/vagrant/.ssh"
+# 5. Distribuye las claves SSH
+./setup-ssh.sh
 
-# 6. Inyecta la clave pública en los nodos gestionados
-PUB_KEY=$(cat ssh/id_rsa.pub)
+# 6. Verifica el estado
+docker compose ps
+```
 
-for container in database loadbalancer webserver; do
+### `setup-ssh.sh`
+
+Este script copia la clave privada al nodo de control e inyecta la clave pública en todos los nodos gestionados:
+
+```bash
+#!/bin/bash
+# setup-ssh.sh
+# Distributes SSH keys between the Ansible control node and managed nodes
+
+set -e
+
+SSH_DIR="./ssh"
+CONTROL_NODE="ansible"
+MANAGED_NODES=("database" "loadbalancer" "webserver")
+
+echo "🔑 Setting up SSH keys..."
+
+# --- Control node ---
+echo "📋 Copying private key to control node: $CONTROL_NODE"
+docker exec "$CONTROL_NODE" bash -c "
+  mkdir -p /home/vagrant/.ssh &&
+  chmod 700 /home/vagrant/.ssh &&
+  cp /home/vagrant/.ssh/host_keys/id_rsa /home/vagrant/.ssh/id_rsa &&
+  cp /home/vagrant/.ssh/host_keys/id_rsa.pub /home/vagrant/.ssh/id_rsa.pub &&
+  chmod 600 /home/vagrant/.ssh/id_rsa &&
+  chown -R vagrant:vagrant /home/vagrant/.ssh
+"
+
+# --- Managed nodes ---
+PUB_KEY=$(cat "$SSH_DIR/id_rsa.pub")
+
+for container in "${MANAGED_NODES[@]}"; do
+  echo "🔓 Injecting public key into: $container"
   docker exec "$container" bash -c "
     mkdir -p /home/vagrant/.ssh &&
     chmod 700 /home/vagrant/.ssh &&
@@ -95,8 +125,12 @@ for container in database loadbalancer webserver; do
   "
 done
 
-# 7. Verifica el estado
-docker compose ps
+echo "✅ SSH setup complete."
+```
+
+```bash
+chmod +x setup-ssh.sh
+./setup-ssh.sh
 ```
 
 ### Acceder al nodo de control
@@ -284,6 +318,7 @@ docker exec -it ansible bash -c "systemctl status ssh"
 # Si es necesario, regenera claves y reinicia:
 ssh-keygen -t rsa -b 2048 -f ssh/id_rsa -N ""
 docker compose down && docker compose up -d
+./setup-ssh.sh
 ```
 
 ### Vagrant: problemas de aprovisionamiento
