@@ -6,7 +6,7 @@ set -e
 
 SSH_DIR="./ssh"
 CONTROL_NODE="ansible"
-MANAGED_NODES=("database" "loadbalancer" "webserver")
+MANAGED_NODES=("ansible" "database" "loadbalancer" "webserver")
 
 echo "🔑 Setting up SSH keys..."
 
