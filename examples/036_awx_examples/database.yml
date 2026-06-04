@@ -1,5 +1,5 @@
----
 - hosts: database
   become: true
+  gather_facts: true
   roles:
     - { role: mysql, db_name: eureka, db_user_name: eurekademo, db_user_pass: eurekademo, db_user_host: '%' }
