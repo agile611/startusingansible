@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     ansible \
     locales \
+    sudo \
+    python3 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -25,8 +27,11 @@ RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen \
 # Create the vagrant user with correct home ownership
 RUN useradd -m -s /bin/bash vagrant && \
     echo "vagrant:vagrant" | chpasswd && \
-    echo "vagrant ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     chown -R vagrant:vagrant /home/vagrant
+
+# Grant vagrant passwordless sudo via drop-in file
+RUN echo "vagrant ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/vagrant \
+    && chmod 0440 /etc/sudoers.d/vagrant
 
 # Configure SSH
 RUN mkdir -p /var/run/sshd && \
