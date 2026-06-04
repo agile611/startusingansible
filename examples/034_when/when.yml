@@ -2,7 +2,7 @@
   hosts: all
   become: true
   tasks:
-    - name: Obtener la dirección IP de la interfaz eth1
+    - name: Obtener la dirección IP de la interfaz eth0
       command: ip addr show eth0
       register: ip_output
 
