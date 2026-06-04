@@ -1688,6 +1688,1119 @@ Prompts:
 
 ## Patrón 1: Job Templates como bloques atómicos
 
+La tentación inicial es crear un template que haga todo. Es el error más común.
+
 ```
-❌ MAL: Un template que hace todo
-  "Deploy completo: provision + configure + deploy + test + notify"
+❌ MAL: Un template monolítico
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Template: "Deploy completo"
+    → Provision infra
+    → Instalar paquetes
+    → Configurar servicios
+    → Desplegar aplicación
+    → Ejecutar tests
+    → Notificar resultado
+  
+  Problemas:
+  - Si falla en "Desplegar aplicación", tienes que relanzar todo
+  - No puedes reutilizar "Ejecutar tests" en otro contexto
+  - Difícil de debuggear: ¿en qué paso falló exactamente?
+  - Imposible paralelizar pasos independientes
+
+✅ BIEN: Templates atómicos compuestos en un Workflow
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Template 1: "Provision Infra"
+  Template 2: "Install Packages"
+  Template 3: "Configure Services"
+  Template 4: "Deploy Application"
+  Template 5: "Run Tests"
+  Template 6: "Send Notification"
+  
+  Workflow: encadena los 6 templates con lógica condicional
+  
+  Beneficios:
+  + Relaunch desde el punto de fallo
+  + Reutilizar "Run Tests" en múltiples workflows
+  + Paralelizar "Configure Services" y "Provision Monitoring"
+  + Cada template tiene un propósito claro y testeable
+```
+
+**Criterio para decidir si un template es atómico:**
+
+```
+Pregunta: ¿Tiene sentido ejecutar este template solo, sin los demás?
+
+Si la respuesta es SÍ → es atómico, buen template
+Si la respuesta es NO → probablemente deberías dividirlo
+```
+
+---
+
+## Patrón 2: Naming conventions para templates
+
+Un buen nombre de template comunica inmediatamente qué hace, en qué entorno y quién lo usa.
+
+```
+FORMATO RECOMENDADO:
+  [ENTORNO] Aplicación - Acción (Scope)
+
+EJEMPLOS:
+  [DEV]  WebApp - Deploy Completo
+  [DEV]  WebApp - Solo Config
+  [PROD] WebApp - Deploy Completo
+  [PROD] WebApp - Health Check
+  [ALL]  Nginx  - Reload Config
+  [ALL]  Sistema - Actualizar Paquetes
+  [PROD] BD      - Backup PostgreSQL
+  [PROD] BD      - Restore PostgreSQL (EMERGENCIA)
+
+PARA TEMPLATES INTERNOS (usados solo en Workflows):
+  _WF WebApp - Provision Infra
+  _WF WebApp - Run Integration Tests
+  _WF WebApp - Rollback v{version}
+
+  El prefijo _WF indica que no se lanza manualmente
+```
+
+---
+
+## Patrón 3: Gestión de defaults seguros
+
+El playbook debe funcionar correctamente con los valores por defecto del Survey, sin que el operador tenga que saber qué poner.
+
+```yaml
+# playbooks/deploy_web.yml
+---
+- name: Deploy Web Application
+  hosts: "{{ target_group | default('dev') }}"
+  become: true
+
+  vars:
+    # Defaults seguros: si el Survey no provee el valor,
+    # el playbook usa algo razonable y seguro
+    app_version:      "{{ app_version      | default('v1.0.0') }}"
+    app_env:          "{{ environment      | default('dev') }}"
+    change_ticket:    "{{ change_ticket    | default('N/A') }}"
+    deploy_notes:     "{{ deploy_notes     | default('Sin notas') }}"
+    custom_forks:     "{{ custom_forks     | default(10) | int }}"
+    rollback_enabled: "{{ rollback_enabled | default(true) | bool }}"
+    
+    # Variables calculadas a partir de otras
+    is_production:    "{{ app_env == 'prod' }}"
+    deploy_timestamp: "{{ ansible_date_time.epoch }}"
+    deploy_id:        "{{ change_ticket }}-{{ deploy_timestamp }}"
+```
+
+---
+
+## Patrón 4: Idempotencia en todos los templates
+
+Un Job Template debe poder ejecutarse múltiples veces sin efectos secundarios no deseados.
+
+```yaml
+# ❌ MAL: No idempotente
+- name: Añadir línea a fichero de config
+  ansible.builtin.shell:
+    cmd: echo "max_connections=100" >> /etc/app/app.conf
+  # Cada ejecución añade una línea más → fichero corrupto
+
+# ✅ BIEN: Idempotente con lineinfile
+- name: Configurar max_connections
+  ansible.builtin.lineinfile:
+    path: /etc/app/app.conf
+    regexp: '^max_connections='
+    line: "max_connections={{ db_max_connections }}"
+    create: true
+  # Siempre deja el fichero con exactamente una línea correcta
+
+# ❌ MAL: No idempotente
+- name: Crear usuario
+  ansible.builtin.command:
+    cmd: useradd webapp
+  # Falla si el usuario ya existe
+
+# ✅ BIEN: Idempotente con módulo user
+- name: Crear usuario webapp
+  ansible.builtin.user:
+    name: webapp
+    system: true
+    shell: /sbin/nologin
+    state: present
+  # No hace nada si el usuario ya existe
+```
+
+**Test de idempotencia en AWX:**
+
+```
+Ejecutar el mismo Job Template dos veces seguidas.
+
+Primera ejecución:
+  Tasks con estado "changed": N  (cambios reales)
+  Tasks con estado "ok":      M
+
+Segunda ejecución (sin cambios en el sistema):
+  Tasks con estado "changed": 0  ← debe ser 0
+  Tasks con estado "ok":      N+M
+
+Si la segunda ejecución tiene "changed" > 0,
+el playbook NO es idempotente. Hay que corregirlo.
+```
+
+---
+
+## Patrón 5: Separar templates por velocidad de cambio
+
+Agrupa las tasks según con qué frecuencia cambian. Esto reduce el tiempo de ejecución en el día a día.
+
+```
+CAMBIA RARAMENTE (1 vez al mes o menos):
+  Template: "Instalar Paquetes del Sistema"
+  Tags: packages, system
+  → Ejecutar solo cuando hay nuevas dependencias
+
+CAMBIA OCASIONALMENTE (1-2 veces por semana):
+  Template: "Actualizar Configuración"
+  Tags: config
+  → Ejecutar cuando cambia ansible.cfg, templates, vars
+
+CAMBIA FRECUENTEMENTE (varias veces al día):
+  Template: "Deploy Artefacto de Aplicación"
+  Tags: deploy, verify
+  → Ejecutar en cada release de código
+
+EJECUTAR SIEMPRE:
+  Template: "Health Check"
+  Tags: verify
+  → Ejecutar como monitorización o gate de CI/CD
+```
+
+---
+
+## Patrón 6: Variables de entorno en templates separados
+
+En lugar de un template con Survey que pregunte el entorno, considera templates separados por entorno con variables hardcoded. Reduce el riesgo de desplegar en prod por error.
+
+```
+OPCIÓN A: Un template con Survey de entorno
+  Template: "WebApp - Deploy"
+  Survey: entorno (dev/stage/prod)
+  
+  Riesgo: el operador puede elegir "prod" cuando quería "dev"
+  Mitigación: añadir confirmación o aprobación para prod
+
+OPCIÓN B: Templates separados por entorno (más seguro)
+  Template: "WebApp - Deploy DEV"
+    Extra Vars: environment=dev, target_group=dev
+    Instance Group: ig-dev
+    
+  Template: "WebApp - Deploy STAGE"
+    Extra Vars: environment=stage, target_group=stage
+    Instance Group: ig-stage
+    
+  Template: "WebApp - Deploy PROD"
+    Extra Vars: environment=prod, target_group=prod
+    Instance Group: ig-prod
+    Require Approval: (via Workflow)
+  
+  Ventaja: imposible confundir entornos
+  Desventaja: más templates que mantener
+```
+
+---
+
+## Patrón 7: Job Slicing para grandes inventarios
+
+Cuando tienes cientos o miles de hosts, el Job Slicing divide el inventario en N partes que se ejecutan en paralelo en diferentes nodos.
+
+```
+SIN SLICING (1000 hosts, forks=50):
+  Un solo job → 20 rondas de 50 hosts → tiempo total: T
+
+CON SLICING (1000 hosts, slices=4, forks=50):
+  Slice 1: hosts 1-250   (en ig-prod-1)  ─┐
+  Slice 2: hosts 251-500 (en ig-prod-2)   ├─ en paralelo
+  Slice 3: hosts 501-750 (en ig-prod-3)   │
+  Slice 4: hosts 751-1000(en ig-prod-4)  ─┘
+  Tiempo total: ~T/4
+```
+
+```
+Templates → Web App Deploy → Edit
+
+  Job Slicing: 4   ← divide el inventario en 4 partes
+  
+  Requisito: tener al menos 4 instancias en el Instance Group
+  
+  → Save
+```
+
+---
+
+## Patrón 8: Callback Provisioning para hosts que se auto-registran
+
+Cuando un host nuevo se aprovisiona (por ejemplo, una instancia EC2 recién creada), puede llamar a AWX para que lo configure automáticamente, sin que nadie tenga que lanzar el job manualmente.
+
+```
+FLUJO:
+  1. Instancia EC2 arranca con user-data
+  2. User-data ejecuta: curl -X POST http://awx/api/v2/job_templates/N/callback/
+  3. AWX lanza el Job Template limitado a ese host
+  4. Host queda configurado automáticamente
+
+CONFIGURACIÓN EN AWX:
+  Templates → Web App Deploy → Edit
+  
+  Options:
+    ✅ Enable Provisioning Callbacks
+    Host Config Key: (AWX genera un token secreto)
+  
+  Copiar:
+    Callback URL:     http://awx:30080/api/v2/job_templates/N/callback/
+    Host Config Key:  abc123def456...
+```
+
+```bash
+# Script de user-data para la instancia EC2
+#!/bin/bash
+# /etc/rc.local o cloud-init user-data
+
+AWX_URL="http://awx.empresa.com:30080"
+JT_ID="5"
+HOST_CONFIG_KEY="abc123def456"
+
+# Esperar a que la red esté disponible
+sleep 30
+
+# Llamar a AWX para que configure este host
+curl -s -X POST \
+  "${AWX_URL}/api/v2/job_templates/${JT_ID}/callback/" \
+  -H "Content-Type: application/json" \
+  -d "{\"host_config_key\": \"${HOST_CONFIG_KEY}\"}"
+
+echo "AWX callback enviado: $(date)" >> /var/log/awx-callback.log
+```
+
+---
+
+## Patrón 9: Check Mode como gate de CI/CD
+
+Usa Job Type "Check" (dry-run) como validación antes del deploy real.
+
+```
+WORKFLOW DE VALIDACIÓN:
+  
+  Node 1: [CHECK] Web App Deploy
+    Job Type: Check
+    → Simula el deploy sin hacer cambios reales
+    → Si hay errores de sintaxis o lógica, falla aquí
+    
+  Node 2 (success): [RUN] Web App Deploy
+    Job Type: Run
+    → Solo se ejecuta si el Check pasó
+    
+  Node 2 (failure): Notify - Check Failed
+    → Alerta al equipo sin haber tocado nada
+```
+
+```
+Templates → Add → Job Template
+  Name:      [CHECK] Web App - Dry Run
+  Job Type:  Check     ← dry-run
+  Inventory: Env Inventory
+  Project:   Platform Playbooks
+  Playbook:  playbooks/deploy_web.yml
+  → Save
+```
+
+---
+
+## Patrón 10: Documentar templates con Description y Labels
+
+AWX permite añadir etiquetas (Labels) a los templates para organizarlos y filtrarlos.
+
+```
+Templates → Web App Deploy → Edit
+
+  Description: |
+    Despliega la aplicación web en cualquier entorno.
+    
+    TAGS DISPONIBLES:
+      packages  → instala dependencias del sistema
+      config    → actualiza configuración
+      deploy    → despliega nuevo artefacto
+      verify    → ejecuta health checks
+    
+    SURVEY REQUERIDO:
+      app_version   → versión semver (ej: v1.2.3)
+      environment   → dev / stage / prod
+      target_group  → grupo del inventario
+      change_ticket → ticket de cambio (obligatorio en prod)
+    
+    MANTENEDOR: equipo-platform@empresa.com
+    RUNBOOK:    https://wiki.empresa.com/runbooks/webapp-deploy
+    
+  Labels:
+    + webapp
+    + deploy
+    + production
+    + nginx
+```
+
+---
+
+# 3.14 Troubleshooting del Módulo 3
+
+Los problemas más frecuentes con Job Templates, Surveys y Execution Environments.
+
+---
+
+## Problema 1: Survey variable no llega al playbook
+
+**Síntoma:**
+```
+El job se ejecuta pero la variable del Survey tiene el valor por defecto
+del playbook en lugar del valor introducido en el Survey.
+```
+
+**Diagnóstico:**
+```bash
+# Ver las variables con las que se ejecutó el job
+JOB_ID=10
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/jobs/${JOB_ID}/" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+extra_vars = json.loads(data.get('extra_vars', '{}'))
+print('Variables del job:')
+for k, v in extra_vars.items():
+    print(f'  {k} = {v}')
+"
+```
+
+**Causas y soluciones:**
+
+```
+CAUSA 1: Nombre de variable no coincide
+  Survey → Answer Variable Name: App_Version  (con mayúscula)
+  Playbook → {{ app_version }}                (sin mayúscula)
+  
+  Solución: los nombres son case-sensitive. Usar siempre minúsculas
+  y snake_case. Verificar que coinciden exactamente.
+
+CAUSA 2: Survey no está habilitado
+  Templates → Tu Template → Survey
+  Verificar que el toggle "Survey Enabled" está ON (azul)
+
+CAUSA 3: Extra Vars del template sobreescriben el Survey
+  FALSO: en AWX, el Survey tiene MAYOR precedencia que Extra Vars.
+  Si la variable aparece en Extra Vars Y en Survey, gana Survey.
+  
+  Pero si la variable está en el playbook como var hardcoded
+  (no en extra_vars), puede sobreescribir el Survey.
+  
+  Solución: usar default() en el playbook:
+  app_version: "{{ app_version | default('v1.0.0') }}"
+  No hardcodear el valor directamente.
+
+CAUSA 4: El playbook usa vars_files que sobreescriben
+  Si un vars_file define la misma variable que el Survey,
+  el vars_file puede ganar dependiendo del orden.
+  
+  Solución: revisar la jerarquía de variables de Ansible.
+  Los extra_vars (Survey) tienen la mayor precedencia,
+  pero solo si no hay un set_fact posterior que los sobreescriba.
+```
+
+---
+
+## Problema 2: "Module not found" o "Collection not found"
+
+**Síntoma:**
+```
+ERROR! couldn't resolve module/action 'community.mysql.mysql_db'.
+This often indicates a misspelling, missing collection, or incorrect module path.
+```
+
+**Diagnóstico:**
+```bash
+# Ver qué colecciones tiene el EE que usó el job
+# Primero, identificar qué EE usó el job
+JOB_ID=10
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/jobs/${JOB_ID}/" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'EE usado: {data.get(\"execution_environment\", \"N/A\")}')
+"
+
+# Verificar colecciones del EE por defecto
+kubectl exec -n awx deployment/awx-task -c awx-task -- \
+  ansible-galaxy collection list
+
+# Verificar colecciones de un EE específico
+EE_IMAGE="registry.ejemplo.com/ee/webapp-ee:1.0.0"
+docker run --rm ${EE_IMAGE} ansible-galaxy collection list
+```
+
+**Soluciones:**
+
+```
+SOLUCIÓN 1: Cambiar al EE correcto
+  El EE por defecto de AWX no incluye todas las colecciones.
+  Seleccionar un EE que sí tenga la colección necesaria.
+  
+  Templates → Tu Template → Edit
+  Execution Environment: EE WebApp 1.0.0  (que tiene community.mysql)
+
+SOLUCIÓN 2: Añadir la colección al EE personalizado
+  # En requirements.yml del EE
+  collections:
+    - name: community.mysql
+      version: ">=3.8.0"
+  
+  # Reconstruir el EE
+  ansible-builder build --file execution-environment.yml \
+    --tag registry.ejemplo.com/ee/webapp-ee:1.1.0
+  
+  # Actualizar el EE en AWX y asignarlo al template
+
+SOLUCIÓN 3: Instalar colección via requirements.yml en el proyecto
+  # En la raíz del repo Git
+  # collections/requirements.yml
+  ---
+  collections:
+    - name: community.mysql
+      version: ">=3.8.0"
+  
+  # AWX instala las colecciones al sincronizar el proyecto
+  # (menos recomendado que EEs, pero funciona para desarrollo)
+```
+
+---
+
+## Problema 3: Job se queda en estado "pending" o "waiting"
+
+**Síntoma:**
+```
+El job se lanza pero permanece en estado "pending" o "waiting"
+durante varios minutos sin ejecutarse.
+```
+
+**Diagnóstico:**
+```bash
+# Ver el estado del job
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/jobs/?order_by=-id&page_size=1" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+job = data['results'][0]
+print(f'Status: {job[\"status\"]}')
+print(f'Job Explanation: {job.get(\"job_explanation\", \"N/A\")}')
+"
+
+# Ver capacidad de los Instance Groups
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/instance_groups/" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for ig in data['results']:
+    print(f'Group: {ig[\"name\"]}')
+    print(f'  Capacity: {ig[\"capacity\"]}')
+    print(f'  Consumed: {ig[\"consumed_capacity\"]}')
+    print(f'  Instances: {ig[\"instances\"]}')
+    print(f'  Jobs Running: {ig[\"jobs_running\"]}')
+"
+
+# Ver pods de AWX (¿están todos Running?)
+kubectl get pods -n awx
+```
+
+**Causas y soluciones:**
+
+```
+CAUSA 1: Instance Group sin capacidad disponible
+  Todos los slots de ejecución están ocupados.
+  
+  Solución a corto plazo:
+    Esperar a que terminen los jobs en ejecución.
+    O cancelar jobs bloqueados.
+  
+  Solución a largo plazo:
+    Añadir más instancias al Instance Group.
+    Aumentar la capacidad del nodo de ejecución.
+
+CAUSA 2: Instance Group asignado no existe o está vacío
+  El template apunta a "ig-prod" pero ese grupo no tiene instancias.
+  
+  Solución:
+    Administration → Instance Groups → ig-prod
+    Verificar que tiene instancias asignadas.
+    O cambiar el template a "default" Instance Group.
+
+CAUSA 3: Pod awx-task no está Running
+  kubectl get pods -n awx
+  Si awx-task está en CrashLoopBackOff o Pending:
+  
+  kubectl logs -n awx deployment/awx-task -c awx-task --tail=50
+  kubectl describe pod -n awx <awx-task-pod-name>
+
+CAUSA 4: Aprobación pendiente en un Workflow
+  Si el job es parte de un Workflow con nodo de Aprobación,
+  puede estar esperando que alguien apruebe.
+  
+  Verificar: Jobs → Workflow Jobs → ver si hay aprobación pendiente.
+
+CAUSA 5: Redis no disponible
+  kubectl get pods -n awx | grep redis
+  Si Redis está caído, los jobs no pueden encolarse.
+  
+  kubectl logs -n awx <redis-pod> --tail=20
+```
+
+---
+
+## Problema 4: Job falla con "Host unreachable"
+
+**Síntoma:**
+```
+UNREACHABLE! => {
+  "changed": false,
+  "msg": "Failed to connect to the host via ssh: ...",
+  "unreachable": true
+}
+```
+
+**Diagnóstico paso a paso:**
+
+```bash
+# Paso 1: Verificar que el host existe en el inventario
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/hosts/?name=prod-web1" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data['count'] > 0:
+    host = data['results'][0]
+    print(f'Host encontrado: {host[\"name\"]}')
+    print(f'Enabled: {host[\"enabled\"]}')
+    print(f'Variables: {host[\"variables\"]}')
+else:
+    print('Host NO encontrado en el inventario')
+"
+
+# Paso 2: Verificar conectividad de red desde el execution node
+kubectl exec -n awx deployment/awx-task -c awx-task -- \
+  ping -c 3 192.168.1.10
+
+kubectl exec -n awx deployment/awx-task -c awx-task -- \
+  nc -zv 192.168.1.10 22
+
+# Paso 3: Verificar la credencial SSH
+# En AWX UI: Credentials → Platform SSH → Test (si está disponible)
+# O lanzar un job con verbosity=4 para ver detalles de conexión SSH
+```
+
+**Causas y soluciones:**
+
+```
+CAUSA 1: ansible_host incorrecto
+  El nombre del host en el inventario no resuelve a la IP correcta,
+  o la IP en ansible_host está mal.
+  
+  Solución:
+    Inventories → Env Inventory → Hosts → prod-web1
+    Verificar Variables: ansible_host: 10.0.1.10
+    Verificar que la IP es correcta y accesible.
+
+CAUSA 2: Usuario SSH incorrecto
+  La credencial tiene username: ubuntu pero el host espera ansible.
+  
+  Solución:
+    Credentials → Platform SSH → Edit
+    Verificar Username: ansible
+    O añadir ansible_user: ansible en las variables del host/grupo.
+
+CAUSA 3: Clave SSH no autorizada en el host
+  La clave pública de AWX no está en ~/.ssh/authorized_keys del host.
+  
+  Solución:
+    ssh-copy-id -i ~/.ssh/awx_platform.pub ansible@10.0.1.10
+    O ejecutar el playbook de bootstrap (ver Módulo 2).
+
+CAUSA 4: Puerto SSH no estándar
+  El host usa puerto 2222 en lugar de 22.
+  
+  Solución:
+    En variables del host: ansible_port: 2222
+
+CAUSA 5: Firewall bloqueando el puerto 22
+  El execution node de AWX no puede llegar al host por red.
+  
+  Solución:
+    Verificar Security Groups (AWS), NSG (Azure) o reglas de firewall.
+    El execution node necesita salida TCP/22 hacia los hosts.
+
+CAUSA 6: Host en lista known_hosts con clave diferente
+  El host cambió su clave SSH (reinstalación, etc.).
+  
+  Solución:
+    En el Job Template, añadir en Extra Vars:
+    ansible_ssh_extra_args: "-o StrictHostKeyChecking=no"
+    (solo en desarrollo; en producción, actualizar known_hosts)
+```
+
+---
+
+## Problema 5: Vault error — "Decryption failed"
+
+**Síntoma:**
+```
+ERROR! Decryption failed (no vault secrets were found that could decrypt)
+```
+
+**Diagnóstico:**
+```bash
+# Ver qué credenciales Vault están adjuntas al job
+JOB_ID=10
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/jobs/${JOB_ID}/credentials/" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for cred in data['results']:
+    print(f'Credencial: {cred[\"name\"]} (tipo: {cred[\"kind\"]})')
+    if cred['kind'] == 'vault':
+        print(f'  Vault ID: {cred.get(\"inputs\", {}).get(\"vault_id\", \"default\")}')
+"
+```
+
+**Causas y soluciones:**
+
+```
+CAUSA 1: Vault ID no coincide
+  El fichero fue cifrado con --vault-id prod
+  pero la credencial en AWX tiene Vault Identifier: default
+  
+  Solución:
+    Credentials → Vault Prod → Edit
+    Vault Identifier: prod  ← debe coincidir con el usado al cifrar
+  
+  Verificar el vault ID del fichero:
+    head -2 vars/secrets_prod.yml
+    # $ANSIBLE_VAULT;1.2;AES256;prod  ← el ID es "prod"
+
+CAUSA 2: Credencial Vault no adjunta al Job Template
+  El template tiene SSH pero no tiene Vault.
+  
+  Solución:
+    Templates → Tu Template → Edit
+    Credentials → Add: Vault Prod
+    → Save
+
+CAUSA 3: Password de Vault incorrecto
+  La credencial tiene la contraseña equivocada.
+  
+  Solución:
+    Credentials → Vault Prod → Edit
+    Vault Password: (reintroducir la contraseña correcta)
+    → Save
+
+CAUSA 4: El EE no tiene ansible-vault instalado
+  Muy raro con EEs modernos, pero posible con EEs mínimos.
+  
+  Verificar:
+    docker run --rm <ee-image> which ansible-vault
+  
+  Solución: usar un EE que incluya ansible-core completo.
+```
+
+---
+
+## Problema 6: Ejecuciones lentas
+
+**Síntoma:**
+```
+El job tarda mucho más de lo esperado.
+gather_facts tarda 30-60 segundos por cada ejecución.
+```
+
+**Diagnóstico:**
+```bash
+# Ver el tiempo de cada task en los eventos del job
+JOB_ID=10
+curl -s -u "admin:TuPasswordSegura123!" \
+  "http://localhost:30080/api/v2/jobs/${JOB_ID}/job_events/?event=runner_on_ok&page_size=50" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+tasks = []
+for event in data['results']:
+    if event.get('task') and event.get('event_data', {}).get('duration'):
+        tasks.append((
+            event['event_data']['duration'],
+            event['task']
+        ))
+tasks.sort(reverse=True)
+print('Top 10 tasks más lentas:')
+for duration, task in tasks[:10]:
+    print(f'  {duration:.2f}s  →  {task}')
+"
+```
+
+**Soluciones:**
+
+```
+PROBLEMA: gather_facts lento
+  Síntoma: la task "Gathering Facts" tarda 10-30s por host
+  
+  Solución 1: Activar Fact Cache
+    # En ansible.cfg del repo
+    [defaults]
+    fact_caching = redis
+    fact_caching_connection = redis://localhost:6379/0
+    fact_caching_timeout = 86400
+    
+    # En el playbook, segunda ejecución:
+    gather_facts: false  # usa el cache
+  
+  Solución 2: Recopilar solo los facts necesarios
+    - name: Recopilar solo facts de red y OS
+      ansible.builtin.setup:
+        gather_subset:
+          - network
+          - distribution
+      # En lugar de gather_facts: true (que recoge todo)
+
+PROBLEMA: Forks demasiado bajos
+  Síntoma: 100 hosts pero solo 5 en paralelo → 20 rondas
+  
+  Solución:
+    Templates → Tu Template → Edit
+    Forks: 20  (o más, según capacidad del execution node)
+
+PROBLEMA: SSH ControlMaster no configurado
+  Cada task abre una nueva conexión SSH → overhead enorme
+  
+  Solución: añadir en ansible.cfg del repo:
+    [ssh_connection]
+    ssh_args = -o ControlMaster=auto -o ControlPersist=60s
+    pipelining = true
+
+PROBLEMA: Package manager lento (apt update en cada run)
+  Solución: usar cache_valid_time en apt
+    - name: Actualizar cache apt
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600  # no actualiza si tiene menos de 1h
+
+PROBLEMA: Muchos hosts con serial=1
+  Si el playbook usa serial: 1 con 100 hosts,
+  es secuencial por diseño. Evaluar si es necesario.
+  
+  Solución: usar serial: "10%"  o serial: [1, 5, 10%]
+  para un balance entre seguridad y velocidad.
+```
+
+---
+
+## Problema 7: Tags no funcionan como se espera
+
+**Síntoma:**
+```
+Especifiqué Job Tags: deploy pero se ejecutaron todas las tasks.
+O especifiqué Job Tags: config pero no se ejecutó nada.
+```
+
+**Diagnóstico:**
+```bash
+# Verificar que el playbook tiene las tags definidas
+grep -n "tags:" playbooks/deploy_web.yml
+
+# Listar todas las tags disponibles en el playbook
+ansible-playbook playbooks/deploy_web.yml --list-tags
+# playbook: playbooks/deploy_web.yml
+#   play #1 (all): Deploy Web Application
+#     TASK TAGS: [always, config, deploy, packages, verify]
+#     NOTIFIED: [Restart webapp, Reload nginx]
+```
+
+**Causas y soluciones:**
+
+```
+CAUSA 1: Las tasks no tienen tags definidas
+  Si el playbook no tiene tags en sus tasks,
+  especificar Job Tags no tiene efecto.
+  
+  Solución: añadir tags a las tasks del playbook (ver sección 3.5)
+
+CAUSA 2: Tag con typo
+  Job Tags: depoy  (falta la "l")
+  Playbook: tags: [deploy]
+  
+  Resultado: no se ejecuta ninguna task
+  Solución: verificar la ortografía exacta
+
+CAUSA 3: Tag "always" ejecuta tasks siempre
+  Las tasks con tag "always" se ejecutan SIEMPRE,
+  independientemente de los Job Tags especificados.
+  
+  Esto es el comportamiento correcto de Ansible.
+  Usar "always" solo para tasks que realmente deben ejecutarse siempre
+  (ej: mostrar resumen, limpiar ficheros temporales).
+
+CAUSA 4: Roles sin tags
+  Si incluyes un role sin especificar tags,
+  todas las tasks del role se ejecutan sin tags.
+  
+  Solución: añadir tags al include_role:
+    - name: Configurar Nginx
+      ansible.builtin.include_role:
+        name: nginx
+      tags: [config, nginx]
+```
+
+---
+
+## Problema 8: EE no se actualiza (imagen antigua en cache)
+
+**Síntoma:**
+```
+Actualicé el EE y hice push al registry, pero AWX sigue
+usando la versión antigua de la imagen.
+```
+
+**Soluciones:**
+
+```
+SOLUCIÓN 1: Cambiar la política de Pull a "Always"
+  Administration → Execution Environments → Tu EE → Edit
+  Pull: Always
+  → Save
+  
+  Ahora AWX siempre descarga la última versión de la imagen.
+  (Menos eficiente pero garantiza frescura)
+
+SOLUCIÓN 2: Usar tags de versión explícitas
+  En lugar de usar :latest (que puede quedar en cache):
+  
+  Imagen antigua: registry.ejemplo.com/ee/webapp-ee:latest
+  Imagen nueva:   registry.ejemplo.com/ee/webapp-ee:1.1.0
+  
+  Crear un nuevo EE en AWX con la nueva versión:
+  Administration → Execution Environments → Add
+  Name:  EE WebApp 1.1.0
+  Image: registry.ejemplo.com/ee/webapp-ee:1.1.0
+  
+  Actualizar el Job Template para usar el nuevo EE.
+
+SOLUCIÓN 3: Usar digest inmutable (más robusto)
+  # Obtener el digest de la imagen
+  docker inspect registry.ejemplo.com/ee/webapp-ee:1.1.0 \
+    --format='{{index .RepoDigests 0}}'
+  # registry.ejemplo.com/ee/webapp-ee@sha256:abc123...
+  
+  # Usar el digest en AWX
+  Image: registry.ejemplo.com/ee/webapp-ee@sha256:abc123...
+  
+  Ventaja: imposible que cambie sin que tú lo actualices.
+
+SOLUCIÓN 4: Forzar pull manual
+  kubectl exec -n awx deployment/awx-task -c awx-task -- \
+    docker pull registry.ejemplo.com/ee/webapp-ee:1.1.0
+  
+  (o podman pull si AWX usa Podman)
+```
+
+---
+
+## Referencia rápida: estados de un Job y qué significan
+
+```
+pending   → Job creado, esperando ser encolado en Redis
+waiting   → En cola, esperando que haya capacidad en el Instance Group
+running   → Ejecutándose activamente en un execution node
+successful→ Completado sin errores (todos los hosts OK)
+failed    → Completado con errores (algún host falló o task falló)
+error     → Error interno de AWX (no del playbook)
+canceled  → Cancelado manualmente por un operador
+```
+
+---
+
+# 3.15 Resumen y Checklist del Módulo 3
+
+## Lo que has aprendido
+
+```
+✅ Job Templates como unidades atómicas de automatización self-service
+   → Un template = un playbook + inventory + credentials + EE
+
+✅ Diferencia entre Job Template y Workflow Template
+   → JT: tarea individual / WFT: pipeline de tareas
+
+✅ Tres mecanismos de input: Extra Vars, Prompts y Surveys
+   → Surveys: el más seguro (tipado, validado, auditado)
+   → Extra Vars: defaults técnicos hardcoded
+   → Prompts: flexibilidad controlada en el lanzamiento
+
+✅ Precedencia de variables en AWX
+   → Survey > Extra Vars del launch > Extra Vars del template > Inventario
+
+✅ Limits para targeting preciso de hosts
+   → Patrones: grupo, host, wildcard, intersección, exclusión, regex
+
+✅ Tags y skip-tags para ejecución quirúrgica
+   → Ejecutar solo config, solo deploy, solo verify
+   → Reducir tiempo y blast radius
+
+✅ Forks para paralelismo controlado
+   → Más forks = más rápido pero más carga
+   → Ajustar según entorno y capacidad de red
+
+✅ Verbosity para observabilidad
+   → 0-1 en producción, 2-3 para troubleshooting, 4 para SSH debug
+
+✅ Fact Caching con Redis
+   → 20-40% más rápido en ejecuciones repetidas
+   → gather_facts: false en playbooks que usan el cache
+
+✅ Execution Environments personalizados
+   → Colecciones fijadas por versión
+   → Reproducible, auditable, portable
+   → Construir con ansible-builder
+
+✅ Instance Groups para aislamiento de carga
+   → ig-dev, ig-stage, ig-prod
+   → Capacidad dedicada por entorno
+
+✅ Patrones avanzados
+   → Templates atómicos + Workflows
+   → Naming conventions claras
+   → Idempotencia verificable
+   → Job Slicing para grandes inventarios
+   → Provisioning Callbacks para auto-registro
+   → Check Mode como gate de CI/CD
+```
+
+## Checklist de verificación
+
+```bash
+AWX_URL="http://localhost:30080"
+AWX_AUTH="admin:TuPasswordSegura123!"
+
+echo "=== 1. Job Template existe ==="
+curl -s -u "${AWX_AUTH}" \
+  "${AWX_URL}/api/v2/job_templates/?name=Web+App+Deploy" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data['count'] > 0:
+    jt = data['results'][0]
+    print(f'✅ Template: {jt[\"name\"]}')
+    print(f'   Playbook: {jt[\"playbook\"]}')
+    print(f'   EE: {jt[\"execution_environment\"]}')
+else:
+    print('❌ Template no encontrado')
+"
+
+echo ""
+echo "=== 2. Survey habilitado ==="
+curl -s -u "${AWX_AUTH}" \
+  "${AWX_URL}/api/v2/job_templates/?name=Web+App+Deploy" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+if data['count'] > 0:
+    jt = data['results'][0]
+    survey = '✅ Habilitado' if jt['survey_enabled'] else '❌ Deshabilitado'
+    print(f'Survey: {survey}')
+"
+
+echo ""
+echo "=== 3. Último job exitoso ==="
+curl -s -u "${AWX_AUTH}" \
+  "${AWX_URL}/api/v2/jobs/?order_by=-id&page_size=5" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for job in data['results']:
+    icon = '✅' if job['status'] == 'successful' else '❌' if job['status'] == 'failed' else '⏳'
+    print(f'{icon} Job {job[\"id\"]}: {job[\"name\"]} → {job[\"status\"]} ({job.get(\"elapsed\", 0):.1f}s)')
+"
+
+echo ""
+echo "=== 4. Execution Environments registrados ==="
+curl -s -u "${AWX_AUTH}" \
+  "${AWX_URL}/api/v2/execution_environments/" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+print(f'Total EEs: {data[\"count\"]}')
+for ee in data['results']:
+    print(f'  ✅ {ee[\"name\"]}: {ee[\"image\"]}')
+"
+
+echo ""
+echo "=== 5. Instance Groups con capacidad ==="
+curl -s -u "${AWX_AUTH}" \
+  "${AWX_URL}/api/v2/instance_groups/" \
+  | python3 -c "
+import sys, json
+data = json.load(sys.stdin)
+for ig in data['results']:
+    available = ig['capacity'] - ig['consumed_capacity']
+    icon = '✅' if available > 0 else '⚠️'
+    print(f'{icon} {ig[\"name\"]}: capacidad={ig[\"capacity\"]} disponible={available}')
+"
+```
+
+## Preguntas de verificación conceptual
+
+```
+1. ¿Cuál es la diferencia entre un Prompt y un Survey?
+   → Prompt: permite al operador modificar campos del template
+     (inventory, credentials, limit, tags) al lanzar.
+     Survey: formulario con campos tipados y validados para
+     recoger variables de negocio (versión, entorno, ticket).
+
+2. ¿Qué tiene mayor precedencia: Extra Vars del template o Survey?
+   → El Survey tiene mayor precedencia. Si ambos definen
+     "app_version", el valor del Survey gana.
+
+3. ¿Cuándo usarías gather_facts: false en un playbook?
+   → Cuando tienes Fact Cache habilitado y los facts ya están
+     en Redis de una ejecución anterior. Ahorra 10-30s por host.
+
+4. ¿Qué es un Execution Environment y por qué es mejor
+   que instalar colecciones directamente en el servidor AWX?
+   → Es una imagen de contenedor con ansible-core + colecciones.
+     Permite versiones distintas por job, es reproducible,
+     auditable y no contamina el entorno del servidor.
+
+5. ¿Qué hace el Job Type "Check"?
+   → Ejecuta el playbook en modo dry-run: simula los cambios
+     sin aplicarlos. Equivale a ansible-playbook --check.
+     Útil como gate de validación antes del deploy real.
+
+6. ¿Para qué sirve el Job Slicing?
+   → Divide el inventario en N partes que se ejecutan en
+     paralelo en diferentes nodos de ejecución. Reduce el
+     tiempo total para inventarios muy grandes.
+
+7. ¿Qué pasa si una task tiene el tag "always"?
+   → Se ejecuta siempre, independientemente de los Job Tags
+     especificados. Usar solo para tasks que realmente deben
+     ejecutarse en cualquier circunstancia.
+```
+
+---
+
+## 🔜 Siguiente: Módulo 4
+
+En el Módulo 4 componemos los Job Templates en **Workflows** con lógica condicional, añadimos **nodos de aprobación** para cambios sensibles, configuramos **notificaciones** en Slack/Teams y conectamos todo con **CI/CD** via webhooks y tokens de API.
+
+> 🎯 **El principio de este módulo:** Un Job Template bien diseñado es reutilizable, idempotente y self-service. Los Surveys son el contrato entre la automatización y los operadores: definen qué pueden cambiar y qué no. La combinación de tags + limits + forks te da control quirúrgico sobre qué se ejecuta, dónde y a qué velocidad.
