@@ -14,7 +14,7 @@
 - name: de-activate enabled sites
   file: path=/etc/nginx/sites-enabled/{{ item }} state=absent
   with_items: "{{ result.stdout_lines }}"
-  when: item not in sites
+  when: item not in sites.keys()
   notify: restart nginx
 
 - name: enable nginx sites
