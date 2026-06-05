@@ -1,0 +1,20 @@
+# After the configuration is done, we can run some checks to verify that everything is working as expected.
+- hosts: database
+  become: true
+  roles:
+    - status-database
+
+- hosts: webserver
+  become: true
+  roles:
+    - status-webserver
+
+- hosts: loadbalancer
+  become: true
+  roles:
+    - status-loadbalancer
+
+- hosts: control
+  become: true  
+  roles:
+    - status-control
