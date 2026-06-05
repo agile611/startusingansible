@@ -1,6 +1,6 @@
 ---
 - name: verify end-to-end index response
-  uri: url=http://{{item}} return_content=yes
+  uri: url=http://{{ hostvars[item]['ansible_host'] }} return_content=yes
   with_items: "{{ groups.loadbalancer }}"
   register: lb_index
 
@@ -10,7 +10,7 @@
   with_items: "{{lb_index.results}}"
 
 - name: verify end-to-end db response
-  uri: url=http://{{item}}/db return_content=yes
+  uri: url=http://{{ hostvars[item]['ansible_host'] }}/db return_content=yes
   with_items: "{{ groups.loadbalancer }}"
   register: lb_db
 
