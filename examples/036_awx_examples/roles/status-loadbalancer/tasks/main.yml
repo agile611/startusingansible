@@ -8,7 +8,7 @@
 
 - name: verify backend index response
   uri: url=http://{{item}} return_content=yes
-  with_items: "{{ groups['webservers'] }}"
+  with_items: "{{ groups['webserver'] }}"
   register: app_index
 
 - name: verify backend index response
@@ -18,7 +18,7 @@
 
 - name: verify backend db response
   uri: url=http://{{item}}/db return_content=yes
-  with_items: "{{ groups['webservers'] }}"
+  with_items: "{{ groups['webserver'] }}"
   register: app_db
 
 - name: verify backend db response
