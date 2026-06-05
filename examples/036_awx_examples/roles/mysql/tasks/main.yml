@@ -16,7 +16,7 @@
   service: name=mysql state=started enabled=yes
 
 - name: create demo database
-  mysql_db: name=demo state=present
+  ansible.mysql.mysql_db: name=demo state=present
 
 - name: create demo user
-  mysql_user: name=demo password=demo priv=demo.*:ALL host='%' state=present
+  ansible.mysql.mysql_user: name=demo password=demo priv=demo.*:ALL host='%' state=present
