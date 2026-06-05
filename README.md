@@ -76,10 +76,13 @@ docker compose up -d
 # 4. Espera a que sshd esté listo
 sleep 3
 
-# 5. Distribuye las claves SSH
+# 5. Cambiar permisos del fichero
+chmod +x setup-ssh.sh
+
+# 6. Distribuye las claves SSH
 ./setup-ssh.sh
 
-# 6. Verifica el estado
+# 7. Verifica el estado
 docker compose ps
 ```
 
