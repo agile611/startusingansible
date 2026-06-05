@@ -4,10 +4,12 @@ upstream demo {
 {% endfor %}
 }
 
+
+
 server {
     listen 80;
 
     location / {
-        proxy_pass http://{{ hostvars[server]['ansible_host'] }};
+        proxy_pass http://demo;
     }
 }
