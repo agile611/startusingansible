@@ -1,0 +1,20 @@
+---
+- name: verify end-to-end index response
+  uri: url=http://{{item}} return_content=yes
+  with_items: "{{ groups.loadbalancer }}"
+  register: lb_index
+
+- name: verify end-to-end index response
+  fail: msg="index failed to return content"
+  when: "'Hello, from sunny' not in item.content"
+  with_items: "{{lb_index.results}}"
+
+- name: verify end-to-end db response
+  uri: url=http://{{item}}/db return_content=yes
+  with_items: "{{ groups.loadbalancer }}"
+  register: lb_db
+
+- name: verify end-to-end db response
+  fail: msg="db failed to return content"
+  when: "'Database Connected from' not in item.content"
+  with_items: "{{lb_db.results}}"
