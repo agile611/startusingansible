@@ -1,5 +1,2 @@
 ---
-sites:
-  myapp20211216:
-    frontend: 80
-    backend: 80
+# defaults file for nginx

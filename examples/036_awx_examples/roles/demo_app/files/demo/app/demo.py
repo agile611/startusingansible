@@ -1,9 +1,10 @@
 from flask import Flask
-from flask.ext.sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
 import os, socket
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URI']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 hostname = socket.gethostname()
 
@@ -13,10 +14,6 @@ def index():
 
 @app.route('/db')
 def dbtest():
-  #try:
-  #    db.create_all()
-  #except Exception as e:
-  #    return e.message + '\n'
   return 'Database Connected from %s!\n' % hostname
 
 if __name__ == '__main__':
